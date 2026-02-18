@@ -1,0 +1,7 @@
+# Ansible logs
+ansible/logs/
+
+# Terraform state and working files
+terraform/envs/*/.terraform/
+terraform/envs/*/.terraform.lock.hcl
+terraform/envs/*/terraform.tfstate*

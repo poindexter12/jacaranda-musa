@@ -1,0 +1,15 @@
+---
+# Musa Project Group Variables
+# Non-secret values only. Secrets injected via justfile deploy recipe.
+
+# Application
+app_data_dir: /opt/musa
+timezone: America/Denver
+
+# Twenty CRM
+twenty_tag: "v1.16.0"
+twenty_domain: musa-project-test.joeseymour.io
+
+# SWAG
+swag_url: joeseymour.io
+swag_subdomain: musa-project-test

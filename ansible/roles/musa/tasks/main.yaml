@@ -1,0 +1,162 @@
+---
+# Musa role - SWAG + Twenty CRM deployment
+#
+# Requires extra-vars: cf_tunnel_token, cf_api_token, cf_zone_id,
+#   cf_account_id, pg_password, app_secret, ghcr_pat
+# Assumes: LXC container with standard Ubuntu template (Docker NOT pre-installed)
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - cf_tunnel_token is defined
+      - cf_tunnel_token | length > 0
+      - cf_api_token is defined
+      - cf_api_token | length > 0
+      - cf_zone_id is defined
+      - cf_account_id is defined
+      - pg_password is defined
+      - app_secret is defined
+      - ghcr_pat is defined
+    fail_msg: "Required variables must be set (see role defaults for list)"
+    success_msg: "Required variables are configured"
+  tags: [always]
+
+# ============================================================================
+# DOCKER INSTALLATION (LXC containers use standard Ubuntu template)
+# ============================================================================
+
+- name: Install Docker prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: true
+  tags: [deploy]
+
+- name: Add Docker GPG key
+  ansible.builtin.shell:
+    cmd: |
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+    creates: /etc/apt/keyrings/docker.asc
+  tags: [deploy]
+
+- name: Add Docker APT repository
+  ansible.builtin.shell:
+    cmd: >-
+      echo "deb [arch=$(dpkg --print-architecture)
+      signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable"
+      > /etc/apt/sources.list.d/docker.list
+    creates: /etc/apt/sources.list.d/docker.list
+  tags: [deploy]
+
+- name: Install Docker and Docker Compose plugin
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+  tags: [deploy]
+
+- name: Ensure Docker service is running and enabled
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+  tags: [deploy]
+
+# ============================================================================
+# GHCR AUTHENTICATION (for private images)
+# ============================================================================
+
+- name: Log in to GHCR
+  ansible.builtin.command:
+    cmd: docker login ghcr.io -u poindexter12 --password-stdin
+    stdin: "{{ ghcr_pat }}"
+  changed_when: false
+  no_log: true
+  tags: [deploy]
+
+# ============================================================================
+# DIRECTORY STRUCTURE
+# ============================================================================
+
+- name: Create application directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ app_data_dir }}"
+    - "{{ app_data_dir }}/nginx"
+  tags: [deploy]
+
+# ============================================================================
+# CONFIGURATION TEMPLATES
+# ============================================================================
+
+- name: Deploy nginx proxy config for Twenty CRM
+  ansible.builtin.template:
+    src: twenty.conf.j2
+    dest: "{{ app_data_dir }}/nginx/twenty.conf"
+    mode: "0644"
+  notify: restart musa stack
+  tags: [deploy]
+
+- name: Deploy Twenty CRM environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_data_dir }}/.env"
+    mode: "0600"
+  notify: restart musa stack
+  no_log: true
+  tags: [deploy]
+
+- name: Deploy Docker Compose stack
+  ansible.builtin.template:
+    src: docker-compose.yaml.j2
+    dest: "{{ app_data_dir }}/docker-compose.yaml"
+    mode: "0644"
+  notify: restart musa stack
+  tags: [deploy]
+
+# ============================================================================
+# SERVICE STARTUP
+# ============================================================================
+
+- name: Start Docker Compose stack
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ app_data_dir }}"
+  changed_when: false
+  tags: [deploy]
+
+# ============================================================================
+# HEALTH VERIFICATION
+# ============================================================================
+
+- name: Wait for SWAG to respond
+  ansible.builtin.uri:
+    url: "http://localhost:80"
+    status_code: [200, 301, 302, 401, 403, 502]
+  register: swag_health
+  until: swag_health.status in [200, 301, 302, 401, 403, 502]
+  retries: 30
+  delay: 5
+  tags: [verify]
+
+- name: Wait for Twenty CRM health check
+  ansible.builtin.uri:
+    url: "http://localhost:3000/healthz"
+  register: twenty_health
+  until: twenty_health.status == 200
+  retries: 30
+  delay: 10
+  tags: [verify]

@@ -1,0 +1,198 @@
+# {{ ansible_managed }}
+# Twenty CRM — {{ twenty_domain }}
+# Deployed by Ansible to {{ app_data_dir }}/docker-compose.yaml
+
+x-logging: &default-logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
+services:
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: {{ pg_password }}
+      POSTGRES_DB: twenty
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    logging: *default-logging
+
+  server:
+    image: twentycrm/twenty:{{ twenty_tag }}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - server-local-data:/app/packages/twenty-server/.local-storage
+    env_file: .env
+    environment:
+      NODE_PORT: 3000
+      SERVER_URL: https://{{ twenty_domain }}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+
+  worker:
+    image: twentycrm/twenty:{{ twenty_tag }}
+    restart: unless-stopped
+    command: yarn worker:prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+    logging: *default-logging
+
+  backup:
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/backup:latest
+    container_name: twenty-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backups:/backups:rw
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: {{ pg_password }}
+      PGDATABASE: twenty
+      BACKUP_DIR: /backups
+      RETENTION_DAYS: "7"
+    logging: *default-logging
+
+  rollup:
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/rollup:latest
+    container_name: twenty-rollup
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      TWENTY_API_URL: http://server:3000
+      CRON_SCHEDULE: "0 2 * * *"
+      TZ: {{ timezone }}
+      WEBHOOK_ROLLUP_MODE: disabled
+    logging: *default-logging
+
+  webhook-receiver:
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/webhook-receiver:latest
+    container_name: twenty-webhook-receiver
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4001:5000"
+    env_file: .env
+    environment:
+      TWENTY_API_URL: http://server:3000
+      WEBHOOK_ROLLUP_MODE: disabled
+      REDIS_URL: redis://redis:6379/0
+      CIRCUIT_BREAKER_FAIL_MAX: "5"
+      CIRCUIT_BREAKER_RESET_TIMEOUT: "60"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging: *default-logging
+
+  webhook-worker:
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/webhook-receiver:latest
+    container_name: twenty-webhook-worker
+    restart: unless-stopped
+    command: python -m webhook_receiver.worker
+    working_dir: /app
+    depends_on:
+      redis:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      TWENTY_API_URL: http://server:3000
+      WEBHOOK_ROLLUP_MODE: disabled
+      REDIS_URL: redis://redis:6379/0
+    logging: *default-logging
+
+  swag:
+    image: lscr.io/linuxserver/swag:latest
+    container_name: twenty-swag
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    cap_add:
+      - NET_ADMIN
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: {{ timezone }}
+      DOCKER_MODS: linuxserver/mods:swag-cloudflared
+      CF_TUNNEL_TOKEN: {{ cf_tunnel_token }}
+      URL: {{ swag_url }}
+      SUBDOMAINS: {{ swag_subdomain }}
+      ONLY_SUBDOMAINS: "true"
+      VALIDATION: dns
+      DNSPLUGIN: cloudflare
+      CF_ZONE_ID: {{ cf_zone_id }}
+      CF_ACCOUNT_ID: {{ cf_account_id }}
+      CF_API_TOKEN: {{ cf_api_token }}
+    volumes:
+      - swag-config:/config
+      - {{ app_data_dir }}/nginx:/config/nginx/site-confs:ro
+    logging: *default-logging
+
+volumes:
+  db-data:
+    driver: local
+  server-local-data:
+    driver: local
+  backups:
+    driver: local
+  swag-config:
+    driver: local

@@ -1,0 +1,29 @@
+---
+# Musa role defaults (SWAG + Twenty CRM deployment)
+
+# ============================================================================
+# APPLICATION
+# ============================================================================
+app_data_dir: /opt/musa
+timezone: America/Denver
+
+# ============================================================================
+# TWENTY CRM
+# ============================================================================
+twenty_tag: "v1.16.0"
+twenty_domain: musa-project-test.joeseymour.io
+
+# cf_tunnel_token: set via extra-vars (secret from 1Password)
+# pg_password: set via extra-vars (secret from 1Password)
+# app_secret: set via extra-vars (secret from 1Password)
+# ghcr_pat: set via extra-vars (secret from 1Password)
+
+# ============================================================================
+# SWAG SETTINGS (Reverse Proxy with Cloudflare Tunnel)
+# ============================================================================
+swag_url: joeseymour.io
+swag_subdomain: musa-project-test
+
+# cf_api_token: set via extra-vars (secret from 1Password)
+# cf_zone_id: set via extra-vars (secret from 1Password)
+# cf_account_id: set via extra-vars (secret from 1Password)

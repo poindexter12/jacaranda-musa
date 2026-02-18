@@ -1,0 +1,18 @@
+---
+# Deploy Musa (Twenty CRM)
+#
+# Usage:
+#   ansible-playbook -i inventory/test.yaml playbooks/deploy.yaml \
+#     -e "cf_tunnel_token=..." \
+#     -e "cf_api_token=..." \
+#     -e "cf_zone_id=..." \
+#     -e "cf_account_id=..." \
+#     -e "pg_password=..." \
+#     -e "app_secret=..." \
+#     -e "ghcr_pat=..."
+
+- name: Deploy Musa (Twenty CRM)
+  hosts: musa
+  become: true
+  roles:
+    - musa

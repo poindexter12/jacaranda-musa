@@ -1,0 +1,7 @@
+---
+# Musa handlers
+
+- name: restart musa stack
+  ansible.builtin.command:
+    cmd: docker compose up -d --force-recreate
+    chdir: "{{ app_data_dir }}"
