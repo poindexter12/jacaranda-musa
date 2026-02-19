@@ -4,10 +4,10 @@
 ## Websocket support included for real-time features
 
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 80;
+    listen [::]:80;
 
-    server_name _;
+    server_name {{ twenty_domain }};
 
     client_max_body_size 100M;
 

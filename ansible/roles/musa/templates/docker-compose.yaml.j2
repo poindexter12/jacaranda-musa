@@ -172,8 +172,8 @@ services:
       PUID: "1000"
       PGID: "1000"
       TZ: {{ timezone }}
-      DOCKER_MODS: linuxserver/mods:swag-cloudflared
-      CF_TUNNEL_TOKEN: {{ cf_tunnel_token }}
+      DOCKER_MODS: linuxserver/mods:universal-cloudflared
+      CF_REMOTE_MANAGE_TOKEN: {{ cf_tunnel_token }}
       URL: {{ swag_url }}
       SUBDOMAINS: {{ swag_subdomain }}
       ONLY_SUBDOMAINS: "true"
@@ -181,10 +181,10 @@ services:
       DNSPLUGIN: cloudflare
       CF_ZONE_ID: {{ cf_zone_id }}
       CF_ACCOUNT_ID: {{ cf_account_id }}
-      CF_API_TOKEN: {{ cf_api_token }}
     volumes:
       - swag-config:/config
-      - {{ app_data_dir }}/nginx:/config/nginx/site-confs:ro
+      - {{ app_data_dir }}/nginx:/config/nginx/site-confs
+      - {{ app_data_dir }}/cloudflare.ini:/config/dns-conf/cloudflare.ini:ro
     logging: *default-logging
 
 volumes:

@@ -10,8 +10,8 @@ timezone: America/Denver
 # ============================================================================
 # TWENTY CRM
 # ============================================================================
-twenty_tag: "v1.16.0"
-twenty_domain: musa-project-test.joeseymour.io
+twenty_tag: "v1.17.0"
+twenty_domain: musa-project-crm-test.joeseymour.io
 
 # cf_tunnel_token: set via extra-vars (secret from 1Password)
 # pg_password: set via extra-vars (secret from 1Password)
@@ -22,7 +22,7 @@ twenty_domain: musa-project-test.joeseymour.io
 # SWAG SETTINGS (Reverse Proxy with Cloudflare Tunnel)
 # ============================================================================
 swag_url: joeseymour.io
-swag_subdomain: musa-project-test
+swag_subdomain: musa-project-crm-test
 
 # cf_api_token: set via extra-vars (secret from 1Password)
 # cf_zone_id: set via extra-vars (secret from 1Password)

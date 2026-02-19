@@ -48,7 +48,7 @@ deploy:
         -i inventory/test.yaml \
         playbooks/deploy.yaml \
         -e "cf_tunnel_token=$({{ op_read }} 'op://Homelab/musa-project-crm-test/cf_tunnel_token')" \
-        -e "cf_api_token=$({{ op_read }} 'op://Homelab/cloudflare/api_token')" \
+        -e "cf_api_token=$({{ op_read }} 'op://Homelab/musa-project-crm-test/cf_api_token')" \
         -e "cf_zone_id=$({{ op_read }} 'op://Homelab/cloudflare/zone_id')" \
         -e "cf_account_id=$({{ op_read }} 'op://Homelab/cloudflare/account_id')" \
         -e "pg_password=$({{ op_read }} 'op://Homelab/musa-project-crm-test/pg_password')" \

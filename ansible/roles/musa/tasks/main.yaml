@@ -102,6 +102,15 @@
 # CONFIGURATION TEMPLATES
 # ============================================================================
 
+- name: Deploy Cloudflare credentials for certbot DNS validation
+  ansible.builtin.template:
+    src: cloudflare.ini.j2
+    dest: "{{ app_data_dir }}/cloudflare.ini"
+    mode: "0600"
+  notify: restart musa stack
+  no_log: true
+  tags: [deploy]
+
 - name: Deploy nginx proxy config for Twenty CRM
   ansible.builtin.template:
     src: twenty.conf.j2
@@ -143,13 +152,13 @@
 # ============================================================================
 
 - name: Wait for SWAG to respond
-  ansible.builtin.uri:
-    url: "http://localhost:80"
-    status_code: [200, 301, 302, 401, 403, 502]
+  ansible.builtin.command:
+    cmd: docker exec twenty-swag curl -sf -o /dev/null -w '%{http_code}' http://localhost:80
   register: swag_health
-  until: swag_health.status in [200, 301, 302, 401, 403, 502]
+  until: swag_health.rc == 0
   retries: 30
   delay: 5
+  changed_when: false
   tags: [verify]
 
 - name: Wait for Twenty CRM health check
