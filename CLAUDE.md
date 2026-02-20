@@ -43,6 +43,7 @@ Internet -> Cloudflare Edge -> Tunnel
 ```
 
 **Additional services:**
+
 - **backup** — PostgreSQL backups to `/backups` volume
 - **rollup** — Analytics aggregation cron (2 AM daily)
 - **webhook-receiver** — Port 4001 for external webhooks
