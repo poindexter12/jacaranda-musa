@@ -1,7 +1,23 @@
-# Ansible logs
-ansible/logs/
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
 
-# Terraform state and working files
-terraform/envs/*/.terraform/
-terraform/envs/*/.terraform.lock.hcl
-terraform/envs/*/terraform.tfstate*
+# Ansible
+ansible/logs/
+*.retry
+
+# Secrets
+.mise.local.toml
+.envrc.secrets
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+uv.lock
+
+# mise
+.mise.local.toml
