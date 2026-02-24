@@ -24,6 +24,17 @@ mod prod
 # Cross-Environment Utilities
 # ============================================================================
 
+# Upgrade OpenTofu providers to latest versions
+upgrade:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf '%b→ Upgrading OpenTofu providers%b\n' '{{ CYAN }}' '{{ NC }}'
+    for env in test prod; do
+        printf '%b  → %s%b\n' '{{ YELLOW }}' "$env" '{{ NC }}'
+        tofu -chdir=terraform/envs/$env init -upgrade
+    done
+    printf '%b✓ Provider upgrade complete%b\n' '{{ GREEN }}' '{{ NC }}'
+
 # Verify 1Password items exist
 check-secrets:
     #!/usr/bin/env bash
