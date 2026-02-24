@@ -5,8 +5,8 @@
 #
 # Usage: just prod::<recipe>
 
-import '../../lib/infrastructure/just/terraform.just'
-import '../../lib/infrastructure/just/ansible.just'
+import 'lib/infrastructure/just/terraform.just'
+import 'lib/infrastructure/just/ansible.just'
 
 # Show placeholder message
 @_default:

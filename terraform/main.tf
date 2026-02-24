@@ -30,7 +30,7 @@ terraform {
 # ============================================================================
 
 module "lxc" {
-  source = "../../../infrastructure/terraform/modules/lxc"
+  source = "../lib/infrastructure/terraform/modules/lxc"
 
   name = "musa"
   env  = var.env

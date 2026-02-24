@@ -15,7 +15,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "Telmate/proxmox"
-      version = "= 3.0.2-rc04"
+      version = "= 3.0.2-rc07"
     }
   }
 }
@@ -24,15 +24,12 @@ terraform {
 # Base Infrastructure
 # ============================================================================
 
-data "terraform_remote_state" "base" {
-  backend = "local"
-  config = {
-    path = "../../../../../infrastructure/terraform/terraform.tfstate"
-  }
+module "base_infra" {
+  source = "../../../lib/infrastructure/terraform/modules/base-infra"
 }
 
 locals {
-  base = data.terraform_remote_state.base.outputs
+  base = module.base_infra
 }
 
 # ============================================================================
@@ -40,7 +37,7 @@ locals {
 # ============================================================================
 
 module "vmid" {
-  source = "../../../../../infrastructure/terraform/modules/vmid-ranges"
+  source = "../../../lib/infrastructure/terraform/modules/vmid-ranges"
 }
 
 # Validate all VMIDs are in LXC range (1001-1254)
