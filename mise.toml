@@ -1,0 +1,40 @@
+# mise configuration for jacaranda-musa
+#
+# mise replaces asdf with faster Rust implementation and cleaner UX.
+# Setup: mise trust && mise install
+#
+# Note: Docker Engine and Docker Compose come bundled with Docker Desktop or Colima
+# They are not managed via mise
+
+[tools]
+just = "1.40.0"
+opentofu = "1.8.8"
+uv = "0.5.20"
+pre-commit = "4.0.1"
+# Note: direnv is a global tool, not managed per-project
+
+[settings]
+# Automatically install missing tools when entering directory
+auto_install = true
+# Trust this config file
+trusted_config_paths = ["."]
+
+[env]
+# PATH additions for local scripts and tools
+_.path = ["scripts"]
+# Activate Python venv (created by uv sync)
+_.python.venv = ".venv"
+
+# Shared variables for justfiles
+REPO_ROOT = "{{config_root}}"
+UV_RUN = "uv run --project {{config_root}}"
+
+# Ansible environment variables
+ANSIBLE_INJECT_FACTS_AS_VARS = "False"
+ANSIBLE_PYTHON_INTERPRETER = "/usr/bin/python3"
+ANSIBLE_SSH_PIPELINING = "True"
+ANSIBLE_SSH_ARGS = "-o ControlMaster=auto -o ControlPersist=60s -o IdentitiesOnly=yes"
+
+# Just settings
+JUST_UNSTABLE = "1"
+JUST_COMMAND_COLOR = "cyan"

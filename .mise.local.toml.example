@@ -1,0 +1,12 @@
+# 1Password Connect configuration (for CI/CD and team environments)
+# Copy to .mise.local.toml and fill in your values
+# This file is gitignored - never commit secrets
+
+[env]
+# 1Password Connect server URL and token
+# Get from: 1Password Connect deployment
+OP_CONNECT_HOST = "http://secrets-server.mgmt:8080"
+OP_CONNECT_TOKEN = "your-connect-token-here"
+
+# Alternative: Use 1Password CLI with service account
+# OP_SERVICE_ACCOUNT_TOKEN = "your-service-account-token"
