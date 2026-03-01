@@ -28,10 +28,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `just test::deploy` runs idempotently on existing LXC (no spurious changes)
   3. All 9 containers are healthy after deployment
   4. All 7 1Password items accessible via `just check-secrets`
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 01-01-PLAN.md — Fix validate recipe (all 9 containers) and check-secrets path alignment
+- [ ] 01-02-PLAN.md — Run full pipeline and validate (human checkpoint)
 
 ### Phase 2: Configuration Hardening
 **Goal**: Reduce operational risk before version upgrade (pin images, parameterize domains, add rollback)
@@ -82,7 +83,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Pipeline Validation | 0/TBD | Not started | - |
+| 1. Pipeline Validation | 0/2 | Not started | - |
 | 2. Configuration Hardening | 0/TBD | Not started | - |
 | 3. Version Upgrade | 0/TBD | Not started | - |
 | 4. Health Check Hardening | 0/TBD | Not started | - |
