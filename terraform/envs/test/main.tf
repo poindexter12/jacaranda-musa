@@ -26,7 +26,7 @@ terraform {
 
 module "base_infra" {
   source         = "../../../lib/infrastructure/terraform/modules/base-infra"
-  hub_state_path = "../../../../jacaranda-infra/infrastructure/terraform/terraform.tfstate"
+  hub_state_path = "${path.module}/../../../../jacaranda-infra/infrastructure/terraform/terraform.tfstate"
 }
 
 locals {
