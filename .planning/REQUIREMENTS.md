@@ -34,9 +34,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Configuration
 
-- [ ] **CONF-01**: Domain references use single variable (not hardcoded in multiple templates)
-- [ ] **CONF-02**: Rollback recipe exists (`just test::rollback` or equivalent)
-- [ ] **CONF-03**: Secrets exposure reduced (sensitive env vars marked or documented)
+- [x] **CONF-01**: Domain references use single variable (not hardcoded in multiple templates)
+- [x] **CONF-02**: Rollback recipe exists (`just test::rollback` or equivalent)
+- [x] **CONF-03**: Secrets exposure reduced (sensitive env vars marked or documented)
 
 ## v2 Requirements
 
@@ -74,9 +74,9 @@ Updated during roadmap creation.
 | PIPE-02 | Phase 1 | Pending |
 | PIPE-03 | Phase 1 | Complete |
 | PIPE-04 | Phase 1 | Complete |
-| CONF-01 | Phase 2 | Pending |
-| CONF-02 | Phase 2 | Pending |
-| CONF-03 | Phase 2 | Pending |
+| CONF-01 | Phase 2 | Complete |
+| CONF-02 | Phase 2 | Complete |
+| CONF-03 | Phase 2 | Complete |
 | IMGP-01 | Phase 2 | Complete |
 | IMGP-02 | Phase 2 | Complete |
 | IMGP-03 | Phase 2 | Complete |
