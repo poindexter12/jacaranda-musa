@@ -10,7 +10,7 @@ timezone: America/Denver
 # ============================================================================
 # TWENTY CRM
 # ============================================================================
-twenty_tag: "v1.17.0"
+twenty_tag: "v1.18"
 twenty_domain: musa-project-crm-test.joeseymour.io
 
 # cf_tunnel_token: set via extra-vars (secret from 1Password)

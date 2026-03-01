@@ -7,7 +7,7 @@ app_data_dir: /opt/musa
 timezone: America/Denver
 
 # Twenty CRM
-twenty_tag: "v1.17.0"
+twenty_tag: "v1.18"
 twenty_domain: musa-project-crm-test.joeseymour.io
 
 # SWAG
