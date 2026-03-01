@@ -32,6 +32,55 @@ apply: (tf-apply "test")
 destroy: (tf-destroy "test")
 
 # ============================================================================
+# Rollback
+# ============================================================================
+
+# Save current config as rollback point (called before deploy)
+[private]
+rollback-prep:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    host="musa-test"
+    printf '%b-> Saving rollback snapshot%b\n' '{{ CYAN }}' '{{ NC }}'
+    ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && \
+        cp -f docker-compose.yaml docker-compose.yaml.bak 2>/dev/null && \
+        cp -f .env .env.bak 2>/dev/null" || true
+
+# Rollback to previous deployment
+[confirm("Roll back Musa test to previous deployment?")]
+rollback:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    host="musa-test"
+
+    printf '%b=== Rolling back Musa (test) ===%b\n' '{{ BOLD }}' '{{ NC }}'
+
+    # Check backup files exist
+    if ! ssh -o BatchMode=yes root@$host.lan "test -f /opt/musa/docker-compose.yaml.bak"; then
+        printf '%b  FAIL: No rollback snapshot found. Run a deploy first.%b\n' '{{ RED }}' '{{ NC }}'
+        exit 1
+    fi
+
+    # Restore backup files
+    ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && \
+        cp -f docker-compose.yaml.bak docker-compose.yaml && \
+        cp -f .env.bak .env"
+    printf '%b  Restored config from snapshot%b\n' '{{ GREEN }}' '{{ NC }}'
+
+    # Recreate containers
+    ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && docker compose up -d --force-recreate"
+    printf '%b  Waiting 30s for services to start...%b\n' '{{ CYAN }}' '{{ NC }}'
+    sleep 30
+
+    # Quick health check
+    if ssh -o BatchMode=yes root@$host.lan "curl -sf http://localhost:3000/healthz" >/dev/null 2>&1; then
+        printf '%b  Rollback OK — Twenty CRM healthy%b\n' '{{ GREEN }}' '{{ NC }}'
+    else
+        printf '%b  WARNING: Twenty CRM health check failed after rollback%b\n' '{{ RED }}' '{{ NC }}'
+        exit 1
+    fi
+
+# ============================================================================
 # Ansible Operations
 # ============================================================================
 
@@ -39,6 +88,7 @@ destroy: (tf-destroy "test")
 deploy:
     #!/usr/bin/env bash
     set -euo pipefail
+    just test::rollback-prep
     cd ansible
     mkdir -p logs
     export ANSIBLE_LOG_PATH="logs/ansible-$(date +%Y%m%d-%H%M%S).log"
