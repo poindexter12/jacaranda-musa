@@ -1,29 +1,43 @@
 ---
 # Musa role defaults (SWAG + Twenty CRM deployment)
+#
+# IMPORTANT: Domain and app configuration is defined in group_vars/all.yaml
+# (single source of truth). This file contains only role-level defaults
+# and secrets documentation.
 
 # ============================================================================
-# APPLICATION
+# APPLICATION (fallback defaults)
 # ============================================================================
 app_data_dir: /opt/musa
 timezone: America/Denver
 
 # ============================================================================
-# TWENTY CRM
+# DOMAIN AND APP CONFIG
 # ============================================================================
-twenty_tag: "v1.18"
-twenty_domain: musa-project-crm-test.joeseymour.io
-
-# cf_tunnel_token: set via extra-vars (secret from 1Password)
-# pg_password: set via extra-vars (secret from 1Password)
-# app_secret: set via extra-vars (secret from 1Password)
-# ghcr_pat: set via extra-vars (secret from 1Password)
+# See group_vars/all.yaml (single source of truth) for:
+#   - twenty_tag
+#   - twenty_domain
+#   - swag_url
+#   - swag_subdomain
 
 # ============================================================================
-# SWAG SETTINGS (Reverse Proxy with Cloudflare Tunnel)
+# CUSTOM IMAGE VERSIONS (GHCR)
 # ============================================================================
-swag_url: joeseymour.io
-swag_subdomain: musa-project-crm-test
+backup_tag: "latest"
+rollup_tag: "latest"
+webhook_tag: "latest"
 
-# cf_api_token: set via extra-vars (secret from 1Password)
-# cf_zone_id: set via extra-vars (secret from 1Password)
-# cf_account_id: set via extra-vars (secret from 1Password)
+# ============================================================================
+# SECRETS (injected via justfile extra-vars from 1Password)
+# ============================================================================
+# These variables are NEVER committed. They're passed at runtime:
+#
+# Variable          | Source (1Password)                                  | Exposure
+# ------------------|-----------------------------------------------------|------------------
+# cf_tunnel_token   | op://Homelab/musa-project-crm-test/cf_tunnel_token | Docker env var
+# cf_api_token      | op://Homelab/musa-project-crm-test/cf_api_token    | File (cloudflare.ini)
+# cf_zone_id        | op://Homelab/cloudflare/zone_id                    | Docker env var
+# cf_account_id     | op://Homelab/cloudflare/account_id                 | Docker env var
+# pg_password       | op://Homelab/musa-project-crm-test/pg_password     | Docker env var + .env file
+# app_secret        | op://Homelab/musa-project-crm-test/app_secret      | .env file only
+# ghcr_pat          | op://Homelab/github/pat                            | Docker login (not persisted)

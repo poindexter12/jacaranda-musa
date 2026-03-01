@@ -82,7 +82,7 @@ services:
     logging: *default-logging
 
   backup:
-    image: ghcr.io/poindexter12/musa-project-twenty-crm/backup:latest
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/backup:{{ backup_tag }}
     container_name: twenty-backup
     restart: unless-stopped
     depends_on:
@@ -101,7 +101,7 @@ services:
     logging: *default-logging
 
   rollup:
-    image: ghcr.io/poindexter12/musa-project-twenty-crm/rollup:latest
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/rollup:{{ rollup_tag }}
     container_name: twenty-rollup
     restart: unless-stopped
     depends_on:
@@ -116,7 +116,7 @@ services:
     logging: *default-logging
 
   webhook-receiver:
-    image: ghcr.io/poindexter12/musa-project-twenty-crm/webhook-receiver:latest
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/webhook-receiver:{{ webhook_tag }}
     container_name: twenty-webhook-receiver
     restart: unless-stopped
     depends_on:
@@ -142,7 +142,7 @@ services:
     logging: *default-logging
 
   webhook-worker:
-    image: ghcr.io/poindexter12/musa-project-twenty-crm/webhook-receiver:latest
+    image: ghcr.io/poindexter12/musa-project-twenty-crm/webhook-receiver:{{ webhook_tag }}
     container_name: twenty-webhook-worker
     restart: unless-stopped
     command: python -m webhook_receiver.worker

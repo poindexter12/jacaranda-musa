@@ -13,3 +13,8 @@ twenty_domain: musa-project-crm-test.joeseymour.io
 # SWAG
 swag_url: joeseymour.io
 swag_subdomain: musa-project-crm-test
+
+# Custom images
+backup_tag: "latest"
+rollup_tag: "latest"
+webhook_tag: "latest"
