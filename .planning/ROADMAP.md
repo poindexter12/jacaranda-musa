@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 **Plans:** 4 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Add external URL validation to `just test::validate` + verify tunnel
-- [ ] 05-02-PLAN.md — Pin GHCR images and tighten health checks
-- [ ] 05-03-PLAN.md — Consolidate domain vars, add rollback, document secrets
+- [x] 05-01-PLAN.md — Add external URL validation to `just test::validate` + verify tunnel (3min, 2026-03-01)
+- [x] 05-02-PLAN.md — Pin GHCR images and tighten health checks
+- [x] 05-03-PLAN.md — Consolidate domain vars, add rollback, document secrets
 - [ ] 05-04-PLAN.md — Validate full pipeline end-to-end with all changes

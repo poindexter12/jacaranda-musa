@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 Phase: 05 of 05 (Deep Analysis of Current State and Approach Validation)
 Plan: 3 of 4
 Status: In progress
-Last activity: 2026-03-01 — Completed plan 05-03
+Last activity: 2026-03-01 — Completed plan 05-01
 
 Progress: [███████░░░] 50%
 
@@ -66,6 +66,7 @@ Recent decisions affecting current work:
 - [Phase 05]: Keep server start_period at 60s (DB migrations require time)
 - [Phase 05]: Reduce Ansible retry counts from 30→12 (60-120s total wait sufficient with tighter intervals)
 - [Phase 05]: Consolidated domain configuration to group_vars/all.yaml (single source of truth)
+- [Phase 05-01]: Local environment does not use Cloudflare Tunnel (only staging uses tunnel; external URL check failure is expected locally)
 - [Phase 05]: Implemented rollback via .bak snapshots created before each deploy
 - [Phase 05]: Documented all secrets with 1Password sources and exposure details
 
