@@ -153,10 +153,10 @@
 
 - name: Wait for SWAG to respond
   ansible.builtin.command:
-    cmd: docker exec twenty-swag curl -sf -o /dev/null -w '%{http_code}' http://localhost:80
+    cmd: docker exec twenty-swag curl -sf -o /dev/null -w '%{http_code}' --max-time 5 http://localhost:80
   register: swag_health
   until: swag_health.rc == 0
-  retries: 30
+  retries: 12
   delay: 5
   changed_when: false
   tags: [verify]
@@ -164,8 +164,9 @@
 - name: Wait for Twenty CRM health check
   ansible.builtin.uri:
     url: "http://localhost:3000/healthz"
+    timeout: 10
   register: twenty_health
   until: twenty_health.status == 200
-  retries: 30
+  retries: 12
   delay: 10
   tags: [verify]
