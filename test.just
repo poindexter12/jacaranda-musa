@@ -112,6 +112,15 @@ validate: verify
         printf ' %b FAIL%b\n' '{{ RED }}' '{{ NC }}'
     fi
 
+    echo ""
+    echo "--- External Access ---"
+    printf 'External (Cloudflare Tunnel): '
+    if curl -sf -o /dev/null -w 'HTTP %{http_code}' --max-time 10 https://musa-project-test.joeseymour.io 2>/dev/null; then
+        printf ' %b OK%b\n' '{{ GREEN }}' '{{ NC }}'
+    else
+        printf ' %b FAIL%b\n' '{{ RED }}' '{{ NC }}'
+    fi || true
+
 # ============================================================================
 # Logs
 # ============================================================================
