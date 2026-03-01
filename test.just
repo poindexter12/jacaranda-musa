@@ -88,7 +88,7 @@ validate: verify
     printf '%b--- %s.lan ---%b\n' '{{ BOLD }}' "$host" '{{ NC }}'
 
     # Docker containers
-    for container in twenty-swag server worker db redis; do
+    for container in twenty-swag server worker db redis twenty-backup twenty-rollup twenty-webhook-receiver twenty-webhook-worker; do
         if ssh -o BatchMode=yes root@$host.lan "docker ps --format '{{ '{{' }}.Names{{ '}}' }}'" 2>/dev/null | grep -q "$container"; then
             printf '%b  OK %s running%b\n' '{{ GREEN }}' "$container" '{{ NC }}'
         else

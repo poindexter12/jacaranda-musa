@@ -43,7 +43,7 @@ check-secrets:
         "Homelab/musa-project-crm-test/cf_tunnel_token"
         "Homelab/musa-project-crm-test/pg_password"
         "Homelab/musa-project-crm-test/app_secret"
-        "Homelab/cloudflare/api_token"
+        "Homelab/musa-project-crm-test/cf_api_token"
         "Homelab/cloudflare/zone_id"
         "Homelab/cloudflare/account_id"
         "Homelab/github/pat"
