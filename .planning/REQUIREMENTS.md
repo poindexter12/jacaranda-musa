@@ -11,8 +11,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **PIPE-01**: `just test::full` runs end-to-end without errors (Terraform apply + Ansible deploy)
 - [ ] **PIPE-02**: `just test::deploy` re-deploys idempotently on existing LXC
-- [ ] **PIPE-03**: `just test::validate` confirms all 9 containers healthy
-- [ ] **PIPE-04**: `just check-secrets` passes for all 7 1Password items
+- [x] **PIPE-03**: `just test::validate` confirms all 9 containers healthy
+- [x] **PIPE-04**: `just check-secrets` passes for all 7 1Password items
 
 ### Upgrade
 
@@ -72,8 +72,8 @@ Updated during roadmap creation.
 |-------------|-------|--------|
 | PIPE-01 | Phase 1 | Pending |
 | PIPE-02 | Phase 1 | Pending |
-| PIPE-03 | Phase 1 | Pending |
-| PIPE-04 | Phase 1 | Pending |
+| PIPE-03 | Phase 1 | Complete |
+| PIPE-04 | Phase 1 | Complete |
 | CONF-01 | Phase 2 | Pending |
 | CONF-02 | Phase 2 | Pending |
 | CONF-03 | Phase 2 | Pending |
