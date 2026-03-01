@@ -70,28 +70,28 @@ Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | — | Pending |
-| PIPE-02 | — | Pending |
-| PIPE-03 | — | Pending |
-| PIPE-04 | — | Pending |
-| UPGR-01 | — | Pending |
-| UPGR-02 | — | Pending |
-| UPGR-03 | — | Pending |
-| IMGP-01 | — | Pending |
-| IMGP-02 | — | Pending |
-| IMGP-03 | — | Pending |
-| HLTH-01 | — | Pending |
-| HLTH-02 | — | Pending |
-| HLTH-03 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| CONF-03 | — | Pending |
+| PIPE-01 | Phase 1 | Pending |
+| PIPE-02 | Phase 1 | Pending |
+| PIPE-03 | Phase 1 | Pending |
+| PIPE-04 | Phase 1 | Pending |
+| CONF-01 | Phase 2 | Pending |
+| CONF-02 | Phase 2 | Pending |
+| CONF-03 | Phase 2 | Pending |
+| IMGP-01 | Phase 2 | Pending |
+| IMGP-02 | Phase 2 | Pending |
+| IMGP-03 | Phase 2 | Pending |
+| UPGR-01 | Phase 3 | Pending |
+| UPGR-02 | Phase 3 | Pending |
+| UPGR-03 | Phase 3 | Pending |
+| HLTH-01 | Phase 4 | Pending |
+| HLTH-02 | Phase 4 | Pending |
+| HLTH-03 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16 ⚠️
+- Mapped to phases: 16
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after initial definition*
+*Last updated: 2026-02-28 after roadmap creation*
