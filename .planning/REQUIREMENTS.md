@@ -22,15 +22,15 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Image Pinning
 
-- [ ] **IMGP-01**: Backup container pinned to specific version tag (not `latest`)
-- [ ] **IMGP-02**: Rollup container pinned to specific version tag (not `latest`)
-- [ ] **IMGP-03**: Webhook receiver/worker containers pinned to specific version tags (not `latest`)
+- [x] **IMGP-01**: Backup container pinned to specific version tag (not `latest`)
+- [x] **IMGP-02**: Rollup container pinned to specific version tag (not `latest`)
+- [x] **IMGP-03**: Webhook receiver/worker containers pinned to specific version tags (not `latest`)
 
 ### Health Checks
 
-- [ ] **HLTH-01**: Docker Compose health check timeouts tightened (10s interval, 5 retries max)
+- [x] **HLTH-01**: Docker Compose health check timeouts tightened (10s interval, 5 retries max)
 - [ ] **HLTH-02**: `just test::validate` includes external URL check via Cloudflare Tunnel
-- [ ] **HLTH-03**: Ansible health check tasks include explicit curl timeouts
+- [x] **HLTH-03**: Ansible health check tasks include explicit curl timeouts
 
 ### Configuration
 
@@ -77,15 +77,15 @@ Updated during roadmap creation.
 | CONF-01 | Phase 2 | Pending |
 | CONF-02 | Phase 2 | Pending |
 | CONF-03 | Phase 2 | Pending |
-| IMGP-01 | Phase 2 | Pending |
-| IMGP-02 | Phase 2 | Pending |
-| IMGP-03 | Phase 2 | Pending |
+| IMGP-01 | Phase 2 | Complete |
+| IMGP-02 | Phase 2 | Complete |
+| IMGP-03 | Phase 2 | Complete |
 | UPGR-01 | Phase 3 | Pending |
 | UPGR-02 | Phase 3 | Pending |
 | UPGR-03 | Phase 3 | Pending |
-| HLTH-01 | Phase 4 | Pending |
+| HLTH-01 | Phase 4 | Complete |
 | HLTH-02 | Phase 4 | Pending |
-| HLTH-03 | Phase 4 | Pending |
+| HLTH-03 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 16 total
