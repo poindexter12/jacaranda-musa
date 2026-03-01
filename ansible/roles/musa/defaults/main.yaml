@@ -1,7 +1,7 @@
 ---
 # Musa role defaults (SWAG + Twenty CRM deployment)
 #
-# IMPORTANT: Domain and app configuration is defined in group_vars/all.yaml
+# IMPORTANT: Domain and app configuration is defined in inventory/group_vars/all.yaml
 # (single source of truth). This file contains only role-level defaults
 # and secrets documentation.
 
@@ -14,7 +14,7 @@ timezone: America/Denver
 # ============================================================================
 # DOMAIN AND APP CONFIG
 # ============================================================================
-# See group_vars/all.yaml (single source of truth) for:
+# See inventory/group_vars/all.yaml (single source of truth) for:
 #   - twenty_tag
 #   - twenty_domain
 #   - swag_url
