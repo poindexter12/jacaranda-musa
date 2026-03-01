@@ -87,3 +87,24 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. Configuration Hardening | 0/TBD | Not started | - |
 | 3. Version Upgrade | 0/TBD | Not started | - |
 | 4. Health Check Hardening | 0/TBD | Not started | - |
+
+### Phase 5: Operational Hardening (Consolidates Phases 1-4)
+
+**Goal:** Fix external access, harden configuration, tighten health checks, and validate pipeline idempotency. Supersedes Phases 1-4 (v1.18 already deployed manually).
+**Depends on:** Nothing (v1.18 running, Phases 1-4 obsolete)
+**Requirements**: PIPE-01, PIPE-02, HLTH-01, HLTH-02, HLTH-03, IMGP-01, IMGP-02, IMGP-03, CONF-01, CONF-02, CONF-03
+**Success Criteria** (what must be TRUE):
+  1. External access works via Cloudflare Tunnel
+  2. `just test::validate` checks both internal and external endpoints
+  3. GHCR images use configurable version tags
+  4. Health checks use 10s interval, 5 retries, explicit curl timeouts
+  5. Domain vars consolidated to single source
+  6. `just test::rollback` recipe works
+  7. `just test::deploy` runs idempotently
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Add external URL validation to `just test::validate` + verify tunnel
+- [ ] 05-02-PLAN.md — Pin GHCR images and tighten health checks
+- [ ] 05-03-PLAN.md — Consolidate domain vars, add rollback, document secrets
+- [ ] 05-04-PLAN.md — Validate full pipeline end-to-end with all changes
