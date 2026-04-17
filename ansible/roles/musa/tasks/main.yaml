@@ -1,15 +1,15 @@
 ---
 # Musa role - SWAG + Twenty CRM deployment
 #
-# Requires extra-vars: cf_tunnel_token, cf_api_token, cf_zone_id,
+# Requires extra-vars: cf_tunnel_password, cf_api_token, cf_zone_id,
 #   cf_account_id, pg_password, app_secret, ghcr_pat
 # Assumes: LXC container with standard Ubuntu template (Docker NOT pre-installed)
 
 - name: Validate required variables
   ansible.builtin.assert:
     that:
-      - cf_tunnel_token is defined
-      - cf_tunnel_token | length > 0
+      - cf_tunnel_password is defined
+      - cf_tunnel_password | length > 0
       - cf_api_token is defined
       - cf_api_token | length > 0
       - cf_zone_id is defined

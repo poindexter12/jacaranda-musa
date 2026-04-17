@@ -97,13 +97,13 @@ deploy:
         {{ ansible_verbose }} \
         -i inventory/test.yaml \
         playbooks/deploy.yaml \
-        -e "cf_tunnel_token=$({{ op_read }} 'op://Homelab/musa-project-crm-test/cf_tunnel_token')" \
-        -e "cf_api_token=$({{ op_read }} 'op://Homelab/musa-project-crm-test/cf_api_token')" \
-        -e "cf_zone_id=$({{ op_read }} 'op://Homelab/cloudflare/zone_id')" \
-        -e "cf_account_id=$({{ op_read }} 'op://Homelab/cloudflare/account_id')" \
-        -e "pg_password=$({{ op_read }} 'op://Homelab/musa-project-crm-test/pg_password')" \
-        -e "app_secret=$({{ op_read }} 'op://Homelab/musa-project-crm-test/app_secret')" \
-        -e "ghcr_pat=$({{ op_read }} 'op://Homelab/github/pat')"
+        -e "cf_tunnel_password=$(secret-read 'op://Homelab/musa-project-crm-test/cf_tunnel_password')" \
+        -e "cf_api_token=$(secret-read 'op://Homelab/musa-project-crm-test/cf_api_token')" \
+        -e "cf_zone_id=$(secret-read 'op://Homelab/cloudflare/zone_id')" \
+        -e "cf_account_id=$(secret-read 'op://Homelab/cloudflare/account_id')" \
+        -e "pg_password=$(secret-read 'op://Homelab/musa-project-crm-test/pg_password')" \
+        -e "app_secret=$(secret-read 'op://Homelab/musa-project-crm-test/app_secret')" \
+        -e "ghcr_pat=$(secret-read 'op://Homelab/github/pat')"
     printf '%b Done (test)%b\n' '{{ GREEN }}' '{{ NC }}'
 
 # ============================================================================

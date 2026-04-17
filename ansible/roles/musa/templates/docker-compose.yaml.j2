@@ -173,12 +173,23 @@ services:
       PGID: "1000"
       TZ: {{ timezone }}
       DOCKER_MODS: linuxserver/mods:universal-cloudflared
-      CF_REMOTE_MANAGE_TOKEN: {{ cf_tunnel_token }}
+      CF_TUNNEL_NAME: {{ cf_tunnel_name }}
+      CF_TUNNEL_PASSWORD: {{ cf_tunnel_password }}
+      CF_TUNNEL_CONFIG: |
+        ingress:
+          - hostname: {{ twenty_domain }}
+            service: http://localhost:80
+{% for alias in twenty_domain_aliases | default([]) %}
+          - hostname: {{ alias }}
+            service: http://localhost:80
+{% endfor %}
+          - service: http_status:404
       URL: {{ swag_url }}
       SUBDOMAINS: {{ swag_subdomain }}
       ONLY_SUBDOMAINS: "true"
       VALIDATION: dns
       DNSPLUGIN: cloudflare
+      CF_API_TOKEN: {{ cf_api_token }}
       CF_ZONE_ID: {{ cf_zone_id }}
       CF_ACCOUNT_ID: {{ cf_account_id }}
     volumes:

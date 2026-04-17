@@ -7,7 +7,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name {{ twenty_domain }};
+    server_name {{ twenty_domain }}{% for alias in twenty_domain_aliases | default([]) %} {{ alias }}{% endfor %};
 
     client_max_body_size 100M;
 

@@ -34,7 +34,7 @@ webhook_tag: "latest"
 #
 # Variable          | Source (1Password)                                  | Exposure
 # ------------------|-----------------------------------------------------|------------------
-# cf_tunnel_token   | op://Homelab/musa-project-crm-test/cf_tunnel_token | Docker env var
+# cf_tunnel_password| op://Homelab/musa-project-crm-test/cf_tunnel_password | Docker env var
 # cf_api_token      | op://Homelab/musa-project-crm-test/cf_api_token    | File (cloudflare.ini)
 # cf_zone_id        | op://Homelab/cloudflare/zone_id                    | Docker env var
 # cf_account_id     | op://Homelab/cloudflare/account_id                 | Docker env var

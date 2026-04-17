@@ -29,9 +29,10 @@ upgrade:
     #!/usr/bin/env bash
     set -euo pipefail
     printf '%b→ Upgrading OpenTofu providers%b\n' '{{ CYAN }}' '{{ NC }}'
+    encryption_pw=$(secret-read 'op://Homelab/opentofu/password')
     for env in test prod; do
         printf '%b  → %s%b\n' '{{ YELLOW }}' "$env" '{{ NC }}'
-        tofu -chdir=terraform/envs/$env init -upgrade
+        tofu -chdir=terraform/envs/$env init -upgrade -var="encryption_passphrase=$encryption_pw"
     done
     printf '%b✓ Provider upgrade complete%b\n' '{{ GREEN }}' '{{ NC }}'
 
@@ -50,7 +51,7 @@ check-secrets:
     )
     for item in "${items[@]}"; do
         echo "Checking: op://$item"
-        if {{ op_read }} "op://$item" > /dev/null 2>&1; then
+        if secret-read "op://$item" > /dev/null 2>&1; then
             printf '%b  OK %s%b\n' '{{ GREEN }}' "$item" '{{ NC }}'
         else
             printf '%b  MISSING %s%b\n' '{{ RED }}' "$item" '{{ NC }}'

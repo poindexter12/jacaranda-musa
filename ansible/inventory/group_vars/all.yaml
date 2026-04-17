@@ -7,8 +7,14 @@ app_data_dir: /opt/musa
 timezone: America/Denver
 
 # Twenty CRM
-twenty_tag: "v1.18"
+twenty_tag: "v1.20.0"
 twenty_domain: musa-project-crm-test.joeseymour.io
+# Additional hostnames that nginx will accept (experimental custom domain)
+twenty_domain_aliases:
+  - crm-test.musa-project.org
+
+# Cloudflare Tunnel (locally managed)
+cf_tunnel_name: musa-project-crm-test
 
 # SWAG
 swag_url: joeseymour.io
