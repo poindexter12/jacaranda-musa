@@ -127,47 +127,47 @@ Deferred to future milestones.
 
 ## Traceability
 
-Updated during roadmap creation.
+Updated during roadmap creation (2026-04-27).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | TBD | Pending |
-| INFRA-02 | TBD | Pending |
-| INFRA-03 | TBD | Pending |
-| INFRA-04 | TBD | Pending |
-| INFRA-05 | TBD | Pending |
-| PGHA-01 | TBD | Pending |
-| PGHA-02 | TBD | Pending |
-| PGHA-03 | TBD | Pending |
-| PGHA-04 | TBD | Pending |
-| PGHA-05 | TBD | Pending |
-| PGHA-06 | TBD | Pending |
-| PGHA-07 | TBD | Pending |
-| RDHA-01 | TBD | Pending |
-| RDHA-02 | TBD | Pending |
-| RDHA-03 | TBD | Pending |
-| RDHA-04 | TBD | Pending |
-| BKUP-01 | TBD | Pending |
-| BKUP-02 | TBD | Pending |
-| BKUP-03 | TBD | Pending |
-| BKUP-04 | TBD | Pending |
-| BKUP-05 | TBD | Pending |
-| BKUP-06 | TBD | Pending |
-| APHA-01 | TBD | Pending |
-| APHA-02 | TBD | Pending |
-| APHA-03 | TBD | Pending |
-| APHA-04 | TBD | Pending |
-| APHA-05 | TBD | Pending |
-| VALD-01 | TBD | Pending |
-| VALD-02 | TBD | Pending |
-| VALD-03 | TBD | Pending |
-| VALD-04 | TBD | Pending |
+| INFRA-01 | Phase 6 | Pending |
+| INFRA-02 | Phase 6 | Pending |
+| INFRA-03 | Phase 6 | Pending |
+| INFRA-04 | Phase 6 | Pending |
+| INFRA-05 | Phase 10 | Pending |
+| PGHA-01 | Phase 7 | Pending |
+| PGHA-02 | Phase 7 | Pending |
+| PGHA-03 | Phase 7 | Pending |
+| PGHA-04 | Phase 7 | Pending |
+| PGHA-05 | Phase 7 | Pending |
+| PGHA-06 | Phase 7 | Pending |
+| PGHA-07 | Phase 7 | Pending |
+| RDHA-01 | Phase 8 | Pending |
+| RDHA-02 | Phase 8 | Pending |
+| RDHA-03 | Phase 8 | Pending |
+| RDHA-04 | Phase 8 | Pending |
+| BKUP-01 | Phase 8 | Pending |
+| BKUP-02 | Phase 8 | Pending |
+| BKUP-03 | Phase 8 | Pending |
+| BKUP-04 | Phase 8 | Pending |
+| BKUP-05 | Phase 8 | Pending |
+| BKUP-06 | Phase 8 | Pending |
+| APHA-01 | Phase 9 | Pending |
+| APHA-02 | Phase 9 | Pending |
+| APHA-03 | Phase 9 | Pending |
+| APHA-04 | Phase 9 | Pending |
+| APHA-05 | Phase 9 | Pending |
+| VALD-01 | Phase 9 | Pending |
+| VALD-02 | Phase 9 | Pending |
+| VALD-03 | Phase 9 | Pending |
+| VALD-04 | Phase 9 | Pending |
 
 **Coverage:**
-- v2 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 (pending roadmap creation)
+- v2 requirements: 31 total
+- Mapped to phases: 31/31
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-28*
-*Last updated: 2026-04-28 after milestone v2.0 definition*
+*Last updated: 2026-04-27 after v2.0 roadmap creation*

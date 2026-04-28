@@ -1,110 +1,130 @@
 # Roadmap: Musa Project
 
+## Milestones
+
+- **v1.17 Post-Split Validation & Hardening** - Phases 1-5 (superseded / partial)
+- **v2.0 Multi-Node HA** - Phases 6-10 (in progress)
+
 ## Overview
 
-Post-split validation and hardening of the Twenty CRM deployment. Validate the extraction from the jacaranda monorepo didn't break the Terraform/Ansible pipeline, harden configuration (pin images, parameterize domains, add rollback), upgrade Twenty CRM from v1.17.0 to v1.18.0, then tighten health checks and external validation.
+Transform the single-node Twenty CRM deployment into a production-ready, highly available architecture across 3 Proxmox nodes (joseph, everette, maxwell). Build up from multi-node infrastructure through PostgreSQL HA (Patroni + etcd), Redis Sentinel, pgBackRest PITR + GFS backups, dual app instances with Cloudflare Tunnel failover, and comprehensive failover validation. Test environment first, then production.
 
 ## Phases
 
+<details>
+<summary>v1.17 Post-Split Validation & Hardening (Phases 1-5) - SUPERSEDED</summary>
+
+See `.planning/MILESTONES.md` for v1.17 summary.
+
+Phase 5 consolidated Phases 1-4. Shipped: external URL validation, GHCR image pinning, health check tightening, domain consolidation, rollback procedure, secrets documentation.
+
+</details>
+
+### v2.0 Multi-Node HA
+
+**Milestone Goal:** Highly available Twenty CRM that automatically recovers from single-node failures with minimal data loss and zero manual intervention.
+
 **Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Integer phases (6, 7, 8, 9, 10): Planned milestone work
+- Decimal phases (7.1, 7.2): Urgent insertions if needed
 
-Decimal phases appear between their surrounding integers in numeric order.
-
-- [ ] **Phase 1: Pipeline Validation** - Prove repo split didn't break deployment
-- [ ] **Phase 2: Configuration Hardening** - Pin images, parameterize domains, add rollback
-- [ ] **Phase 3: Version Upgrade** - Twenty CRM v1.17.0 → v1.18.0
-- [ ] **Phase 4: Health Check Hardening** - Tighten timeouts and add external validation
+- [ ] **Phase 6: Multi-Node Infrastructure** - 3 LXCs across 3 Proxmox nodes with multi-group inventory
+- [ ] **Phase 7: PostgreSQL HA** - Patroni + etcd cluster with streaming replication and data migration
+- [ ] **Phase 8: Redis HA & Backup Strategy** - Redis Sentinel failover and pgBackRest PITR + GFS rotation
+- [ ] **Phase 9: Application HA & Failover Validation** - Dual app instances, dual tunnels, and comprehensive failover tests
+- [ ] **Phase 10: Production Environment** - Same HA topology with production-sized resources
 
 ## Phase Details
 
-### Phase 1: Pipeline Validation
-**Goal**: Prove the repo split from jacaranda monorepo didn't break the deployment pipeline
-**Depends on**: Nothing (first phase)
-**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04
+### Phase 6: Multi-Node Infrastructure
+**Goal**: 3 LXC containers are provisioned across all Proxmox nodes with correct resource allocation and Ansible can target each node by role
+**Depends on**: Nothing (foundation phase for v2.0)
+**Requirements**: INFRA-01, INFRA-02, INFRA-03, INFRA-04
 **Success Criteria** (what must be TRUE):
-  1. `just test::full` completes without errors (Terraform + Ansible)
-  2. `just test::deploy` runs idempotently on existing LXC (no spurious changes)
-  3. All 9 containers are healthy after deployment
-  4. All 7 1Password items accessible via `just check-secrets`
-**Plans**: 2 plans
-
-Plans:
-- [ ] 01-01-PLAN.md — Fix validate recipe (all 9 containers) and check-secrets path alignment
-- [ ] 01-02-PLAN.md — Run full pipeline and validate (human checkpoint)
-
-### Phase 2: Configuration Hardening
-**Goal**: Reduce operational risk before version upgrade (pin images, parameterize domains, add rollback)
-**Depends on**: Phase 1
-**Requirements**: CONF-01, CONF-02, CONF-03, IMGP-01, IMGP-02, IMGP-03
-**Success Criteria** (what must be TRUE):
-  1. Backup, rollup, and webhook containers use pinned version tags (not `latest`)
-  2. Domain references consolidated to single variable source
-  3. Rollback procedure exists and documented
-  4. Sensitive environment variables documented (secrets exposure mapped)
+  1. `tofu apply` creates 3 LXC containers (one per Proxmox node: joseph, everette, maxwell) with correct VMIDs
+  2. Ansible inventory is auto-generated with groups for etcd_nodes, patroni_nodes, app_nodes, and backup_nodes
+  3. Per-node resource allocation (cores, memory, disk) is configurable via Terraform variables and differs between test and prod
+  4. All 3 LXCs are reachable via SSH and Docker is functional inside each (test environment operational)
 **Plans**: TBD
 
 Plans:
-- [ ] TBD
+- [ ] 06-01: TBD
+- [ ] 06-02: TBD
 
-### Phase 3: Version Upgrade
-**Goal**: Upgrade Twenty CRM from v1.17.0 to v1.18.0
-**Depends on**: Phase 2
-**Requirements**: UPGR-01, UPGR-02, UPGR-03
+### Phase 7: PostgreSQL HA
+**Goal**: A 3-node Patroni PostgreSQL cluster with automatic failover is running, and existing data has been migrated from the single-node deployment without loss
+**Depends on**: Phase 6
+**Requirements**: PGHA-01, PGHA-02, PGHA-03, PGHA-04, PGHA-05, PGHA-06, PGHA-07
 **Success Criteria** (what must be TRUE):
-  1. Server and worker containers running v1.18.0
-  2. Database migrations completed successfully (no errors in logs)
-  3. Application accessible at musa-project-test.joeseymour.io (external access works)
-  4. Existing data intact (no data loss)
+  1. etcd cluster is healthy across 3 nodes (`etcdctl endpoint health` reports all members healthy)
+  2. Patroni cluster shows 1 leader + 2 replicas with streaming replication (`patronictl list` confirms)
+  3. Killing the primary node triggers automatic failover to a replica within 60 seconds (new leader elected, writes resume)
+  4. Patroni REST API responds on each node (health checks functional)
+  5. Existing Twenty CRM data from single-node deployment is present in the cluster (migration verified, no data loss)
 **Plans**: TBD
 
 Plans:
-- [ ] TBD
+- [ ] 07-01: TBD
+- [ ] 07-02: TBD
+- [ ] 07-03: TBD
 
-### Phase 4: Health Check Hardening
-**Goal**: Tighten health check timeouts and add external validation
-**Depends on**: Phase 3
-**Requirements**: HLTH-01, HLTH-02, HLTH-03
+### Phase 8: Redis HA & Backup Strategy
+**Goal**: Redis has automatic failover via Sentinel, and PostgreSQL has continuous WAL archiving (PITR) plus GFS rotation backups
+**Depends on**: Phase 7
+**Requirements**: RDHA-01, RDHA-02, RDHA-03, RDHA-04, BKUP-01, BKUP-02, BKUP-03, BKUP-04, BKUP-05, BKUP-06
 **Success Criteria** (what must be TRUE):
-  1. Docker Compose health checks use 10s interval with 5 retry max
-  2. `just test::validate` includes external URL check via Cloudflare Tunnel
-  3. Ansible health check tasks have explicit curl timeouts
-  4. Failed health checks surface quickly (not hanging indefinitely)
+  1. Redis Sentinel reports 1 master + 2 replicas with quorum=2; killing the master triggers automatic promotion of a replica
+  2. Twenty CRM connects to Redis via Sentinel discovery (not direct host:port) and survives a Redis failover without restart
+  3. pgBackRest continuous WAL archiving is active; `pgbackrest info` shows a valid stanza with recent WAL segments
+  4. Scheduled full (weekly) and differential (daily) pgBackRest backups execute from the standby node (not the primary)
+  5. pg_dump GFS rotation produces daily/7d, weekly/4w, monthly/12mo snapshots on the backup node
 **Plans**: TBD
 
 Plans:
-- [ ] TBD
+- [ ] 08-01: TBD
+- [ ] 08-02: TBD
+- [ ] 08-03: TBD
+
+### Phase 9: Application HA & Failover Validation
+**Goal**: Twenty CRM runs on 2 app nodes with dual Cloudflare Tunnel ingress, and all HA components have tested failover procedures
+**Depends on**: Phase 8
+**Requirements**: APHA-01, APHA-02, APHA-03, APHA-04, APHA-05, VALD-01, VALD-02, VALD-03, VALD-04
+**Success Criteria** (what must be TRUE):
+  1. Twenty CRM server + worker are running on 2 nodes, each with SWAG reverse proxy, and both respond to health checks
+  2. Dual Cloudflare Tunnel (same token on both app nodes) provides ingress failover -- killing one tunnel still routes traffic to the other
+  3. `just test::validate` checks health of all HA components: etcd cluster, Patroni leader/replicas, Sentinel quorum, and both app instances
+  4. Manual failover test recipes exist and pass: PG failover (kill primary, verify promotion), Redis failover (kill master, verify Sentinel promotion), app failover (kill node, verify traffic reroute)
+  5. Single-node failure (any one of the 3 nodes down) does not disrupt Twenty CRM service (end-to-end validated)
+**Plans**: TBD
+
+Plans:
+- [ ] 09-01: TBD
+- [ ] 09-02: TBD
+- [ ] 09-03: TBD
+
+### Phase 10: Production Environment
+**Goal**: The same HA topology is deployed to production with production-sized resources
+**Depends on**: Phase 9
+**Requirements**: INFRA-05
+**Success Criteria** (what must be TRUE):
+  1. Production 3-node HA topology is deployed with larger resource allocation (cores, memory, disk) than test
+  2. All HA components (etcd, Patroni, Sentinel, dual app, dual tunnel) are operational in production
+  3. `just prod::validate` confirms production cluster health (same checks as test::validate)
+**Plans**: TBD
+
+Plans:
+- [ ] 10-01: TBD
+- [ ] 10-02: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Pipeline Validation | 0/2 | Not started | - |
-| 2. Configuration Hardening | 0/TBD | Not started | - |
-| 3. Version Upgrade | 0/TBD | Not started | - |
-| 4. Health Check Hardening | 0/TBD | Not started | - |
-
-### Phase 5: Operational Hardening (Consolidates Phases 1-4)
-
-**Goal:** Fix external access, harden configuration, tighten health checks, and validate pipeline idempotency. Supersedes Phases 1-4 (v1.18 already deployed manually).
-**Depends on:** Nothing (v1.18 running, Phases 1-4 obsolete)
-**Requirements**: PIPE-01, PIPE-02, HLTH-01, HLTH-02, HLTH-03, IMGP-01, IMGP-02, IMGP-03, CONF-01, CONF-02, CONF-03
-**Success Criteria** (what must be TRUE):
-  1. External access works via Cloudflare Tunnel
-  2. `just test::validate` checks both internal and external endpoints
-  3. GHCR images use configurable version tags
-  4. Health checks use 10s interval, 5 retries, explicit curl timeouts
-  5. Domain vars consolidated to single source
-  6. `just test::rollback` recipe works
-  7. `just test::deploy` runs idempotently
-**Plans:** 4 plans
-
-Plans:
-- [x] 05-01-PLAN.md — Add external URL validation to `just test::validate` + verify tunnel (3min, 2026-03-01)
-- [x] 05-02-PLAN.md — Pin GHCR images and tighten health checks
-- [x] 05-03-PLAN.md — Consolidate domain vars, add rollback, document secrets
-- [ ] 05-04-PLAN.md — Validate full pipeline end-to-end with all changes
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 6. Multi-Node Infrastructure | v2.0 | 0/TBD | Not started | - |
+| 7. PostgreSQL HA | v2.0 | 0/TBD | Not started | - |
+| 8. Redis HA & Backup Strategy | v2.0 | 0/TBD | Not started | - |
+| 9. Application HA & Failover Validation | v2.0 | 0/TBD | Not started | - |
+| 10. Production Environment | v2.0 | 0/TBD | Not started | - |
