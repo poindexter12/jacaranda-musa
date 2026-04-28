@@ -9,15 +9,26 @@
 variable "instances" {
   description = "Map of Musa instances to create"
   type = map(object({
-    vmid    = number
-    node    = string
-    mgmt_ip = string # 192.168.5.x - SSH/management
+    vmid        = number
+    node        = string
+    mgmt_ip     = string              # 192.168.5.x - SSH/management
+    transfer_ip = string              # 192.168.11.x - cluster traffic (per D-05)
+    node_role   = string              # "app" or "backup" (per D-15)
+    cores       = optional(number)    # Override default cores (per D-13)
+    memory      = optional(number)    # Override default memory
+    disk_size   = optional(string)    # Override default disk size
   }))
 }
 
 variable "env" {
   description = "Environment name (test or prod)"
   type        = string
+}
+
+variable "ansible_inventory_path" {
+  description = "Path to write Ansible inventory (null = don't generate)"
+  type        = string
+  default     = null
 }
 
 # ============================================================================
@@ -68,19 +79,19 @@ variable "storage" {
 }
 
 variable "cores" {
-  description = "Number of CPU cores per container"
+  description = "Number of CPU cores per container (default for app nodes)"
   type        = number
   default     = 4
 }
 
 variable "memory" {
-  description = "Memory in MB per container"
+  description = "Memory in MB per container (default for app nodes)"
   type        = number
   default     = 4096
 }
 
 variable "disk_size" {
-  description = "Root filesystem size"
+  description = "Root filesystem size (default for app nodes)"
   type        = string
   default     = "20G"
 }

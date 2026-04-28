@@ -1,13 +1,15 @@
 # ============================================================================
-# Musa Test Environment (Single Node)
+# Musa Test Environment (3-Node HA Cluster)
 # ============================================================================
-# Single LXC on joseph running Twenty CRM with SWAG + Cloudflare Tunnel.
+# 3 LXCs across joseph, everette, maxwell for Twenty CRM HA.
 #
-# VMID Allocation: 1180 (4-digit TSSS: 1xxx LXC + IP octet .180)
+# VMID Allocation: 1190-1192 (4-digit TSSS: 1xxx LXC + IP octet)
 # Reference: .claude/skills/vmid-allocation.md
 #
 # IP Allocation:
-#   musa-test: 192.168.5.180 (VMID 1180, mgmt only)
+#   musa-test-app1:  192.168.5.190 / 192.168.11.190 (VMID 1190, joseph)
+#   musa-test-app2:  192.168.5.191 / 192.168.11.191 (VMID 1191, everette)
+#   musa-test-bak:   192.168.5.192 / 192.168.11.192 (VMID 1192, maxwell)
 
 terraform {
   required_version = ">= 1.0"
@@ -71,10 +73,29 @@ locals {
   env = "test"
 
   musa_instances = {
-    "musa-test" = {
-      vmid    = 1180
-      node    = "joseph"
-      mgmt_ip = "192.168.5.180"
+    "musa-test-app1" = {
+      vmid        = 1190
+      node        = "joseph"
+      mgmt_ip     = "192.168.5.190"
+      transfer_ip = "192.168.11.190"
+      node_role   = "app"
+    }
+    "musa-test-app2" = {
+      vmid        = 1191
+      node        = "everette"
+      mgmt_ip     = "192.168.5.191"
+      transfer_ip = "192.168.11.191"
+      node_role   = "app"
+    }
+    "musa-test-bak" = {
+      vmid        = 1192
+      node        = "maxwell"
+      mgmt_ip     = "192.168.5.192"
+      transfer_ip = "192.168.11.192"
+      node_role   = "backup"
+      cores       = 2
+      memory      = 2048
+      disk_size   = "40G"
     }
   }
 }
@@ -89,6 +110,9 @@ module "musa" {
   env       = local.env
   instances = local.musa_instances
 
+  # Custom inventory generation (per D-09)
+  ansible_inventory_path = "${path.module}/../../ansible/inventory/${local.env}.yaml"
+
   # Infrastructure from base
   vlans              = local.base.vlans
   ssh_public_key     = local.base.ssh_public_key
@@ -97,7 +121,7 @@ module "musa" {
   ostemplate         = "${local.base.lxc_template_storage}:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
   storage            = local.base.storage.ceph.name
 
-  # Resources (Twenty CRM needs more than default)
+  # Default resources (overridden per-instance where needed, per D-13)
   cores     = 4
   memory    = 4096
   disk_size = "20G"
