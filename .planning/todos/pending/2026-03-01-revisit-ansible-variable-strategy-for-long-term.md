@@ -2,6 +2,7 @@
 created: 2026-03-01T18:15:09.085Z
 title: Revisit Ansible variable strategy for long-term
 area: ansible
+resolves_phase: 6
 files:
   - ansible/inventory/group_vars/all.yaml
   - ansible/roles/musa/defaults/main.yaml
