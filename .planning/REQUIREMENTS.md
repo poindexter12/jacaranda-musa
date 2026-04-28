@@ -12,7 +12,7 @@ Requirements for Multi-Node HA milestone. Each maps to roadmap phases.
 - [x] **INFRA-01**: 3 LXC containers provisioned across joseph, everette, maxwell via Terraform
 - [x] **INFRA-02**: Multi-group Ansible inventory generated (etcd_nodes, patroni_nodes, app_nodes, backup_nodes)
 - [x] **INFRA-03**: Per-node resource allocation (cores, memory, disk) configurable via Terraform variables
-- [ ] **INFRA-04**: Test environment: 3-node HA topology deployed and functional
+- [x] **INFRA-04**: Test environment: 3-node HA topology deployed and functional
 - [ ] **INFRA-05**: Production environment: 3-node HA topology with production-sized resources
 
 ### PostgreSQL HA
@@ -134,7 +134,7 @@ Updated during roadmap creation (2026-04-27).
 | INFRA-01 | Phase 6 | Pending |
 | INFRA-02 | Phase 6 | Pending |
 | INFRA-03 | Phase 6 | Pending |
-| INFRA-04 | Phase 6 | Pending |
+| INFRA-04 | Phase 6 | Complete |
 | INFRA-05 | Phase 10 | Pending |
 | PGHA-01 | Phase 7 | Pending |
 | PGHA-02 | Phase 7 | Pending |

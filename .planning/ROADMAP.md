@@ -28,7 +28,7 @@ Phase 5 consolidated Phases 1-4. Shipped: external URL validation, GHCR image pi
 - Integer phases (6, 7, 8, 9, 10): Planned milestone work
 - Decimal phases (7.1, 7.2): Urgent insertions if needed
 
-- [ ] **Phase 6: Multi-Node Infrastructure** - 3 LXCs across 3 Proxmox nodes with multi-group inventory
+- [x] **Phase 6: Multi-Node Infrastructure** - 3 LXCs across 3 Proxmox nodes with multi-group inventory (completed 2026-04-28)
 - [ ] **Phase 7: PostgreSQL HA** - Patroni + etcd cluster with streaming replication and data migration
 - [ ] **Phase 8: Redis HA & Backup Strategy** - Redis Sentinel failover and pgBackRest PITR + GFS rotation
 - [ ] **Phase 9: Application HA & Failover Validation** - Dual app instances, dual tunnels, and comprehensive failover tests
@@ -45,11 +45,11 @@ Phase 5 consolidated Phases 1-4. Shipped: external URL validation, GHCR image pi
   2. Ansible inventory is auto-generated with groups for etcd_nodes, patroni_nodes, app_nodes, and backup_nodes
   3. Per-node resource allocation (cores, memory, disk) is configurable via Terraform variables and differs between test and prod
   4. All 3 LXCs are reachable via SSH and Docker is functional inside each (test environment operational)
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 06-01-PLAN.md — Terraform multi-node infrastructure (3 LXCs, dual NIC, per-instance resources, custom multi-group inventory)
-- [ ] 06-02-PLAN.md — Justfile multi-host recipes and infrastructure verification checkpoint
+- [x] 06-02-PLAN.md — Justfile multi-host recipes and infrastructure verification checkpoint
 
 ### Phase 7: PostgreSQL HA
 **Goal**: A 3-node Patroni PostgreSQL cluster with automatic failover is running, and existing data has been migrated from the single-node deployment without loss
@@ -123,7 +123,7 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 6. Multi-Node Infrastructure | v2.0 | 1/2 | Executing (Plan 01 done) | - |
+| 6. Multi-Node Infrastructure | v2.0 | 2/2 | Complete   | 2026-04-28 |
 | 7. PostgreSQL HA | v2.0 | 0/TBD | Not started | - |
 | 8. Redis HA & Backup Strategy | v2.0 | 0/TBD | Not started | - |
 | 9. Application HA & Failover Validation | v2.0 | 0/TBD | Not started | - |
