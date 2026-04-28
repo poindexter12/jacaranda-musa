@@ -48,7 +48,7 @@ Phase 5 consolidated Phases 1-4. Shipped: external URL validation, GHCR image pi
 **Plans:** 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Terraform multi-node infrastructure (3 LXCs, dual NIC, per-instance resources, custom multi-group inventory)
+- [x] 06-01-PLAN.md — Terraform multi-node infrastructure (3 LXCs, dual NIC, per-instance resources, custom multi-group inventory)
 - [ ] 06-02-PLAN.md — Justfile multi-host recipes and infrastructure verification checkpoint
 
 ### Phase 7: PostgreSQL HA
@@ -123,7 +123,7 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 6. Multi-Node Infrastructure | v2.0 | 0/2 | Planning complete | - |
+| 6. Multi-Node Infrastructure | v2.0 | 1/2 | Executing (Plan 01 done) | - |
 | 7. PostgreSQL HA | v2.0 | 0/TBD | Not started | - |
 | 8. Redis HA & Backup Strategy | v2.0 | 0/TBD | Not started | - |
 | 9. Application HA & Failover Validation | v2.0 | 0/TBD | Not started | - |

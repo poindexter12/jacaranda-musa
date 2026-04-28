@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Node HA
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-04-28T20:19:39.237Z"
-last_activity: 2026-04-28 -- Phase 6 planning complete
+stopped_at: Phase 06 Plan 01 complete
+last_updated: "2026-04-28T20:31:00Z"
+last_activity: 2026-04-28 -- Phase 06 Plan 01 complete (Terraform 3-node infra)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 2
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 10
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27)
 
 **Core value:** A production-grade, highly available Twenty CRM deployment that automatically recovers from single-node failures
-**Current focus:** Phase 6 — Multi-Node Infrastructure
+**Current focus:** Phase 06 — multi-node-infrastructure
 
 ## Current Position
 
-Phase: 6 of 10 (Multi-Node Infrastructure) — first phase of v2.0
-Plan: None yet (ready to plan)
-Status: Ready to execute
-Last activity: 2026-04-28 -- Phase 6 planning complete
+Phase: 06 (multi-node-infrastructure) — EXECUTING
+Plan: 2 of 2
+Status: Plan 01 complete — ready for Plan 02
+Last activity: 2026-04-28 -- Phase 06 Plan 01 complete (Terraform 3-node infra)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 10%
 
 ## Performance Metrics
 
@@ -44,7 +44,7 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 06-01 | 7min | 2026-04-28 | 2 tasks, 4 files |
 
 *Updated after each plan completion*
 
@@ -62,6 +62,10 @@ Recent decisions affecting current work:
 - pgBackRest for PITR + GFS pg_dump for portable backups
 - Dual Cloudflare Tunnel for true HA ingress
 - Test environment first, then production
+- [06-01] Two LXC module calls (lxc_app + lxc_bak) for per-tier resource sizing — shared LXC module is uniform-resource-only
+- [06-01] LXC module instances type requires field projection — only vmid/node/mgmt_ip/transfer_ip/tags accepted
+- [06-01] ansible_inventory_path=null on both LXC calls; custom local_file inventory replaces built-in generator
+- [06-01] etcd_nodes and patroni_nodes both contain all 3 hosts from day one (all nodes run etcd/Patroni per D-04)
 
 ### Carried from v1.17
 
@@ -81,5 +85,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-multi-node-infrastructure/06-CONTEXT.md
+Stopped at: Phase 06 Plan 01 complete
+Resume file: .planning/phases/06-multi-node-infrastructure/06-02-PLAN.md

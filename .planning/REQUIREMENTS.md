@@ -9,9 +9,9 @@ Requirements for Multi-Node HA milestone. Each maps to roadmap phases.
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: 3 LXC containers provisioned across joseph, everette, maxwell via Terraform
-- [ ] **INFRA-02**: Multi-group Ansible inventory generated (etcd_nodes, patroni_nodes, app_nodes, backup_nodes)
-- [ ] **INFRA-03**: Per-node resource allocation (cores, memory, disk) configurable via Terraform variables
+- [x] **INFRA-01**: 3 LXC containers provisioned across joseph, everette, maxwell via Terraform
+- [x] **INFRA-02**: Multi-group Ansible inventory generated (etcd_nodes, patroni_nodes, app_nodes, backup_nodes)
+- [x] **INFRA-03**: Per-node resource allocation (cores, memory, disk) configurable via Terraform variables
 - [ ] **INFRA-04**: Test environment: 3-node HA topology deployed and functional
 - [ ] **INFRA-05**: Production environment: 3-node HA topology with production-sized resources
 
