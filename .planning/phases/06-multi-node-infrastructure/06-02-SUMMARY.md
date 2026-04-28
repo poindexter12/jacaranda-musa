@@ -66,7 +66,7 @@ completed: 2026-04-28
 ## Task Commits
 
 1. **Task 1: Update test.just and justfile for 3-node cluster** - `a3a8441` (feat)
-2. **Task 2: Verify 3-node infrastructure is operational** - CHECKPOINT (awaiting human verification)
+2. **Task 2: Verify 3-node infrastructure is operational** - SKIPPED (user cannot test infrastructure at this time)
 
 ## Files Created/Modified
 
@@ -91,22 +91,44 @@ None.
 
 - T-06-08 (Information Disclosure via justfile secrets): deploy recipe continues to pass secrets as ansible extra-vars via `secret-read` — never exposed in stdout. No changes required.
 
+## Skipped Checkpoints
+
+### Task 2: Verify 3-node infrastructure is operational (SKIPPED)
+
+- **Type:** checkpoint:human-verify (blocking gate)
+- **Skipped by:** User — cannot test infrastructure at this time
+- **Status:** NOT APPROVED — gate has not been cleared
+- **Impact:** Phase 6 success criterion 4 is unconfirmed: "All 3 LXCs are reachable via SSH and Docker is functional inside each"
+- **Required before Phase 7:** User must run `just test::verify` and `just test::validate` and confirm all 6 checks pass (DNS, SSH, Docker daemon, Compose, dual NICs, transfer VLAN ping) before starting Phase 7
+
+**Verification steps when ready:**
+```bash
+just test::init && just test::plan   # Review: 3 new LXCs (VMIDs 1190, 1191, 1192)
+just test::apply                      # Create LXC containers
+just test::verify                     # DNS + SSH for all 3 hosts
+just test::validate                   # Docker daemon + Compose on all 3 hosts
+cat ansible/inventory/test.yaml       # Verify groups: musa, etcd_nodes, patroni_nodes, app_nodes, backup_nodes
+ssh root@musa-test-app1.lan "ip addr show eth0 && ip addr show eth1"  # Dual NIC check
+ssh root@musa-test-app1.lan "ping -c2 192.168.11.191 && ping -c2 192.168.11.192"  # Transfer VLAN ping
+```
+
 ## User Setup Required
 
-Task 2 requires manual infrastructure verification. See checkpoint details in orchestrator return message.
+**Human verification pending.** Before proceeding to Phase 7, the operator must run the 6 verification steps listed in "Skipped Checkpoints" above and confirm all pass.
 
 ## Next Phase Readiness
 
 - test.just recipes ready for 3-node operations once `just test::apply` provisions the LXCs
-- Awaiting human confirmation that: tofu apply creates 3 LXCs, SSH works to all 3, Docker functional, inventory groups correct, dual NICs present, transfer VLAN ping works
-- Phase 7 (HA service deployment) depends on Task 2 approval
+- **BLOCKED:** Phase 7 (PostgreSQL HA) requires confirmation that 3 LXCs are reachable, Docker functional, inventory groups correct, dual NICs present, transfer VLAN ping works
+- User must manually verify infrastructure before beginning Phase 7 plans
 
 ## Self-Check: PASSED
 
 - test.just: FOUND
 - justfile: FOUND
 - 06-02-SUMMARY.md: FOUND
-- Commit a3a8441: FOUND
+- Commit a3a8441 (Task 1): FOUND
+- Task 2 checkpoint: SKIPPED (not approved — pending human verification)
 
 ---
 *Phase: 06-multi-node-infrastructure*
