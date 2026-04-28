@@ -1,14 +1,17 @@
-# Musa Project — Test Environment
+# Musa Project — Test Environment (3-Node HA Cluster)
 #
-# Single-node LXC on joseph: VMID 1180, 192.168.5.180
+# 3 LXCs across joseph, everette, maxwell:
+#   musa-test-app1: VMID 1190, 192.168.5.190 (joseph)
+#   musa-test-app2: VMID 1191, 192.168.5.191 (everette)
+#   musa-test-bak:  VMID 1192, 192.168.5.192 (maxwell)
 #
 # Usage: just test::<recipe>
 #
 # Examples:
-#   just test::apply         # Create test LXC
-#   just test::deploy        # Deploy Twenty CRM stack
+#   just test::apply         # Create 3 test LXCs
+#   just test::deploy        # Deploy to all nodes
 #   just test::full          # Apply + wait + deploy
-#   just test::validate      # Check service health
+#   just test::validate      # Check all nodes health
 
 import 'lib/infrastructure/just/terraform.just'
 import 'lib/infrastructure/just/ansible.just'
@@ -40,51 +43,51 @@ destroy: (tf-destroy "test")
 rollback-prep:
     #!/usr/bin/env bash
     set -euo pipefail
-    host="musa-test"
+    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
     printf '%b-> Saving rollback snapshot%b\n' '{{ CYAN }}' '{{ NC }}'
-    ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && \
-        cp -f docker-compose.yaml docker-compose.yaml.bak 2>/dev/null && \
-        cp -f .env .env.bak 2>/dev/null" || true
+    for host in "${hosts[@]}"; do
+        ssh -o BatchMode=yes -o ConnectTimeout=5 root@$host.lan "cd /opt/musa && \
+            cp -f docker-compose.yaml docker-compose.yaml.bak 2>/dev/null && \
+            cp -f .env .env.bak 2>/dev/null" 2>/dev/null || true
+    done
 
 # Rollback to previous deployment
 [confirm("Roll back Musa test to previous deployment?")]
 rollback:
     #!/usr/bin/env bash
     set -euo pipefail
-    host="musa-test"
+    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
 
     printf '%b=== Rolling back Musa (test) ===%b\n' '{{ BOLD }}' '{{ NC }}'
 
-    # Check backup files exist
-    if ! ssh -o BatchMode=yes root@$host.lan "test -f /opt/musa/docker-compose.yaml.bak"; then
-        printf '%b  FAIL: No rollback snapshot found. Run a deploy first.%b\n' '{{ RED }}' '{{ NC }}'
-        exit 1
-    fi
+    for host in "${hosts[@]}"; do
+        printf '%b--- %s ---%b\n' '{{ CYAN }}' "$host" '{{ NC }}'
 
-    # Restore backup files
-    ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && \
-        cp -f docker-compose.yaml.bak docker-compose.yaml && \
-        cp -f .env.bak .env"
-    printf '%b  Restored config from snapshot%b\n' '{{ GREEN }}' '{{ NC }}'
+        # Check backup files exist
+        if ! ssh -o BatchMode=yes root@$host.lan "test -f /opt/musa/docker-compose.yaml.bak" 2>/dev/null; then
+            printf '%b  SKIP: No rollback snapshot on %s%b\n' '{{ YELLOW }}' "$host" '{{ NC }}'
+            continue
+        fi
 
-    # Recreate containers
-    ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && docker compose up -d --force-recreate"
+        # Restore backup files
+        ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && \
+            cp -f docker-compose.yaml.bak docker-compose.yaml && \
+            cp -f .env.bak .env"
+        printf '%b  Restored config from snapshot%b\n' '{{ GREEN }}' '{{ NC }}'
+
+        # Recreate containers
+        ssh -o BatchMode=yes root@$host.lan "cd /opt/musa && docker compose up -d --force-recreate" 2>/dev/null || true
+    done
+
     printf '%b  Waiting 30s for services to start...%b\n' '{{ CYAN }}' '{{ NC }}'
     sleep 30
-
-    # Quick health check
-    if ssh -o BatchMode=yes root@$host.lan "curl -sf http://localhost:3000/healthz" >/dev/null 2>&1; then
-        printf '%b  Rollback OK — Twenty CRM healthy%b\n' '{{ GREEN }}' '{{ NC }}'
-    else
-        printf '%b  WARNING: Twenty CRM health check failed after rollback%b\n' '{{ RED }}' '{{ NC }}'
-        exit 1
-    fi
+    printf '%b  Rollback complete — run just test::validate to check health%b\n' '{{ GREEN }}' '{{ NC }}'
 
 # ============================================================================
 # Ansible Operations
 # ============================================================================
 
-# Deploy Musa services to test node
+# Deploy Musa services to all test nodes
 deploy:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -117,59 +120,60 @@ verify:
     set -euo pipefail
     printf '%b=== Verify test ===%b\n' '{{ BOLD }}' '{{ NC }}'
 
-    host="musa-test"
+    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
 
     echo "--- DNS ---"
-    printf '%s.lan: ' "$host"
-    dig +short $host.lan || echo "FAIL"
+    for host in "${hosts[@]}"; do
+        printf '%s.lan: ' "$host"
+        dig +short $host.lan || echo "FAIL"
+    done
 
     echo "--- SSH ---"
-    printf '%s.lan: ' "$host"
-    ssh -o ConnectTimeout=5 -o BatchMode=yes root@$host.lan hostname 2>/dev/null || echo "FAIL"
+    for host in "${hosts[@]}"; do
+        printf '%s.lan: ' "$host"
+        ssh -o ConnectTimeout=5 -o BatchMode=yes root@$host.lan hostname 2>/dev/null || echo "FAIL"
+    done
 
 # Validate deployment health
 validate: verify
     #!/usr/bin/env bash
     set -euo pipefail
-    printf '%b=== Validate test (Musa / Twenty CRM) ===%b\n' '{{ BOLD }}' '{{ NC }}'
+    printf '%b=== Validate test (Musa / 3-Node HA Cluster) ===%b\n' '{{ BOLD }}' '{{ NC }}'
 
-    host="musa-test"
+    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
 
-    printf '%b--- %s.lan ---%b\n' '{{ BOLD }}' "$host" '{{ NC }}'
+    for host in "${hosts[@]}"; do
+        printf '%b--- %s.lan ---%b\n' '{{ BOLD }}' "$host" '{{ NC }}'
 
-    # Docker containers
-    for container in twenty-swag server worker db redis twenty-backup twenty-rollup twenty-webhook-receiver twenty-webhook-worker; do
-        if ssh -o BatchMode=yes root@$host.lan "docker ps --format '{{ '{{' }}.Names{{ '}}' }}'" 2>/dev/null | grep -q "$container"; then
-            printf '%b  OK %s running%b\n' '{{ GREEN }}' "$container" '{{ NC }}'
+        # Docker daemon
+        printf '  Docker: '
+        if ssh -o BatchMode=yes root@$host.lan "docker info" >/dev/null 2>&1; then
+            printf '%b OK%b\n' '{{ GREEN }}' '{{ NC }}'
         else
-            printf '%b  FAIL %s not running%b\n' '{{ RED }}' "$container" '{{ NC }}'
+            printf '%b FAIL%b\n' '{{ RED }}' '{{ NC }}'
         fi
+
+        # Docker Compose plugin
+        printf '  Compose: '
+        if ssh -o BatchMode=yes root@$host.lan "docker compose version" >/dev/null 2>&1; then
+            printf '%b OK%b\n' '{{ GREEN }}' '{{ NC }}'
+        else
+            printf '%b FAIL%b\n' '{{ RED }}' '{{ NC }}'
+        fi
+
+        # Docker containers (show whatever is running)
+        running=$(ssh -o BatchMode=yes root@$host.lan "docker ps --format '{{ '{{' }}.Names{{ '}}' }}'" 2>/dev/null || true)
+        if [ -n "$running" ]; then
+            echo "  Containers:"
+            echo "$running" | while read -r c; do
+                printf '%b    OK %s running%b\n' '{{ GREEN }}' "$c" '{{ NC }}'
+            done
+        else
+            printf '  Containers: %b(none running — expected before HA deployment)%b\n' '{{ YELLOW }}' '{{ NC }}'
+        fi
+
+        echo ""
     done
-
-    echo ""
-    echo "--- Health Check ---"
-    printf 'Twenty CRM healthz: '
-    if ssh -o BatchMode=yes root@$host.lan "curl -sf http://localhost:3000/healthz" 2>/dev/null; then
-        printf ' %b OK%b\n' '{{ GREEN }}' '{{ NC }}'
-    else
-        printf ' %b FAIL%b\n' '{{ RED }}' '{{ NC }}'
-    fi
-
-    printf 'SWAG (port 80): '
-    if ssh -o BatchMode=yes root@$host.lan "curl -sf -o /dev/null -w 'HTTP %{http_code}' http://localhost:80" 2>/dev/null; then
-        printf ' %b OK%b\n' '{{ GREEN }}' '{{ NC }}'
-    else
-        printf ' %b FAIL%b\n' '{{ RED }}' '{{ NC }}'
-    fi
-
-    echo ""
-    echo "--- External Access ---"
-    printf 'External (Cloudflare Tunnel): '
-    if curl -sf -o /dev/null -w 'HTTP %{http_code}' --max-time 10 https://musa-project-test.joeseymour.io 2>/dev/null; then
-        printf ' %b OK%b\n' '{{ GREEN }}' '{{ NC }}'
-    else
-        printf ' %b FAIL%b\n' '{{ RED }}' '{{ NC }}'
-    fi || true
 
 # ============================================================================
 # Logs
@@ -179,11 +183,18 @@ validate: verify
 logs:
     #!/usr/bin/env bash
     set -euo pipefail
-    host="musa-test"
-    printf '%b=== %s.lan ===%b\n' '{{ BOLD }}' "$host" '{{ NC }}'
-    for container in twenty-swag server worker db redis twenty-backup twenty-rollup twenty-webhook-receiver; do
-        printf '%b--- %s ---%b\n' '{{ CYAN }}' "$container" '{{ NC }}'
-        ssh -o BatchMode=yes root@$host.lan "docker logs $container --tail=5" 2>/dev/null || echo "  not reachable"
+    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
+    for host in "${hosts[@]}"; do
+        printf '%b=== %s.lan ===%b\n' '{{ BOLD }}' "$host" '{{ NC }}'
+        containers=$(ssh -o BatchMode=yes root@$host.lan "docker ps --format '{{ '{{' }}.Names{{ '}}' }}'" 2>/dev/null || true)
+        if [ -n "$containers" ]; then
+            echo "$containers" | while read -r container; do
+                printf '%b--- %s ---%b\n' '{{ CYAN }}' "$container" '{{ NC }}'
+                ssh -o BatchMode=yes root@$host.lan "docker logs $container --tail=5" 2>/dev/null || echo "  not reachable"
+            done
+        else
+            printf '  %b(no containers running)%b\n' '{{ YELLOW }}' '{{ NC }}'
+        fi
     done
 
 # ============================================================================

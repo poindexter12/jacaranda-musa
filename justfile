@@ -1,6 +1,6 @@
-# Musa Project — Twenty CRM Service
+# Musa Project — Twenty CRM Service (3-Node HA Cluster)
 #
-# Single-node LXC with SWAG + Cloudflare Tunnel running Twenty CRM.
+# 3 LXCs across joseph, everette, maxwell for HA Twenty CRM.
 #
 # Usage: just <module>::<recipe>
 #
@@ -36,10 +36,17 @@ upgrade:
     done
     printf '%b✓ Provider upgrade complete%b\n' '{{ GREEN }}' '{{ NC }}'
 
-# Verify 1Password items exist
-check-secrets:
+# Verify 1Password items exist (shows which backend served each read)
+check-secrets mode="auto":
     #!/usr/bin/env bash
-    printf '%b--- Checking 1Password items ---%b\n' '{{ BOLD }}' '{{ NC }}'
+    printf '%b--- Checking 1Password items (mode: {{ mode }}) ---%b\n' '{{ BOLD }}' '{{ NC }}'
+    export SECRET_READ_DEBUG=1
+    case "{{ mode }}" in
+        auto)    ;;                                    # Connect first, fall back to local op
+        connect) ;;                                    # Same as auto; left explicit for symmetry
+        local)   export SECRET_READ_DISABLE_CONNECT=1 ;;  # Force local op CLI
+        *) printf '%bUnknown mode: {{ mode }} (use auto|connect|local)%b\n' '{{ RED }}' '{{ NC }}'; exit 1 ;;
+    esac
     items=(
         "Homelab/musa-project-crm-test/cf_tunnel_token"
         "Homelab/musa-project-crm-test/pg_password"
@@ -50,9 +57,15 @@ check-secrets:
         "Homelab/github/pat"
     )
     for item in "${items[@]}"; do
-        echo "Checking: op://$item"
-        if secret-read "op://$item" > /dev/null 2>&1; then
-            printf '%b  OK %s%b\n' '{{ GREEN }}' "$item" '{{ NC }}'
+        # Capture stderr only: stdout (the secret value) is discarded; stderr
+        # holds the SECRET_READ_DEBUG=1 line telling us which backend won.
+        if stderr=$(secret-read "op://$item" 2>&1 >/dev/null); then
+            if grep -q 'local op' <<< "$stderr"; then
+                backend='local'
+            else
+                backend='connect'
+            fi
+            printf '%b  OK %s %b(%s)%b\n' '{{ GREEN }}' "$item" '{{ CYAN }}' "$backend" '{{ NC }}'
         else
             printf '%b  MISSING %s%b\n' '{{ RED }}' "$item" '{{ NC }}'
         fi
