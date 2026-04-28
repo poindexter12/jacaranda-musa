@@ -45,11 +45,11 @@ Phase 5 consolidated Phases 1-4. Shipped: external URL validation, GHCR image pi
   2. Ansible inventory is auto-generated with groups for etcd_nodes, patroni_nodes, app_nodes, and backup_nodes
   3. Per-node resource allocation (cores, memory, disk) is configurable via Terraform variables and differs between test and prod
   4. All 3 LXCs are reachable via SSH and Docker is functional inside each (test environment operational)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md — Terraform multi-node infrastructure (3 LXCs, dual NIC, per-instance resources, custom multi-group inventory)
+- [ ] 06-02-PLAN.md — Justfile multi-host recipes and infrastructure verification checkpoint
 
 ### Phase 7: PostgreSQL HA
 **Goal**: A 3-node Patroni PostgreSQL cluster with automatic failover is running, and existing data has been migrated from the single-node deployment without loss
@@ -123,7 +123,7 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 6. Multi-Node Infrastructure | v2.0 | 0/TBD | Not started | - |
+| 6. Multi-Node Infrastructure | v2.0 | 0/2 | Planning complete | - |
 | 7. PostgreSQL HA | v2.0 | 0/TBD | Not started | - |
 | 8. Redis HA & Backup Strategy | v2.0 | 0/TBD | Not started | - |
 | 9. Application HA & Failover Validation | v2.0 | 0/TBD | Not started | - |
