@@ -7,9 +7,9 @@
 # Reference: .claude/skills/vmid-allocation.md
 #
 # IP Allocation:
-#   musa-test-app1:  192.168.5.190 / 192.168.11.190 (VMID 1190, joseph)
-#   musa-test-app2:  192.168.5.191 / 192.168.11.191 (VMID 1191, everette)
-#   musa-test-bak:   192.168.5.192 / 192.168.11.192 (VMID 1192, maxwell)
+#   test.app1.app.musa:     192.168.5.190 / 192.168.11.190 (VMID 1190, joseph)
+#   test.app2.app.musa:     192.168.5.191 / 192.168.11.191 (VMID 1191, everette)
+#   test.bak.backup.musa:   192.168.5.192 / 192.168.11.192 (VMID 1192, maxwell)
 
 terraform {
   required_version = ">= 1.0"
@@ -73,21 +73,21 @@ locals {
   env = "test"
 
   musa_instances = {
-    "musa-test-app1" = {
+    "test.app1.app.musa" = {
       vmid        = 1190
       node        = "joseph"
       mgmt_ip     = "192.168.5.190"
       transfer_ip = "192.168.11.190"
       node_role   = "app"
     }
-    "musa-test-app2" = {
+    "test.app2.app.musa" = {
       vmid        = 1191
       node        = "everette"
       mgmt_ip     = "192.168.5.191"
       transfer_ip = "192.168.11.191"
       node_role   = "app"
     }
-    "musa-test-bak" = {
+    "test.bak.backup.musa" = {
       vmid        = 1192
       node        = "maxwell"
       mgmt_ip     = "192.168.5.192"

@@ -11,9 +11,9 @@
 #
 # VMID Allocation: 1190-1192 (4-digit TSSS: 1xxx LXC + IP octet)
 # IP Allocation:
-#   musa-test-app1:  192.168.5.190 / 192.168.11.190 (VMID 1190, joseph)
-#   musa-test-app2:  192.168.5.191 / 192.168.11.191 (VMID 1191, everette)
-#   musa-test-bak:   192.168.5.192 / 192.168.11.192 (VMID 1192, maxwell)
+#   test.app1.app.musa:     192.168.5.190 / 192.168.11.190 (VMID 1190, joseph)
+#   test.app2.app.musa:     192.168.5.191 / 192.168.11.191 (VMID 1191, everette)
+#   test.bak.backup.musa:   192.168.5.192 / 192.168.11.192 (VMID 1192, maxwell)
 
 terraform {
   required_version = ">= 1.0"

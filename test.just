@@ -1,9 +1,9 @@
 # Musa Project — Test Environment (3-Node HA Cluster)
 #
 # 3 LXCs across joseph, everette, maxwell:
-#   musa-test-app1: VMID 1190, 192.168.5.190 (joseph)
-#   musa-test-app2: VMID 1191, 192.168.5.191 (everette)
-#   musa-test-bak:  VMID 1192, 192.168.5.192 (maxwell)
+#   test.app1.app.musa: VMID 1190, 192.168.5.190 (joseph)
+#   test.app2.app.musa: VMID 1191, 192.168.5.191 (everette)
+#   test.bak.backup.musa:  VMID 1192, 192.168.5.192 (maxwell)
 #
 # Usage: just test::<recipe>
 #
@@ -43,7 +43,7 @@ destroy: (tf-destroy "test")
 rollback-prep:
     #!/usr/bin/env bash
     set -euo pipefail
-    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
+    hosts=("test.app1.app.musa" "test.app2.app.musa" "test.bak.backup.musa")
     printf '%b-> Saving rollback snapshot%b\n' '{{ CYAN }}' '{{ NC }}'
     for host in "${hosts[@]}"; do
         ssh -o BatchMode=yes -o ConnectTimeout=5 root@$host.lan "cd /opt/musa && \
@@ -56,7 +56,7 @@ rollback-prep:
 rollback:
     #!/usr/bin/env bash
     set -euo pipefail
-    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
+    hosts=("test.app1.app.musa" "test.app2.app.musa" "test.bak.backup.musa")
 
     printf '%b=== Rolling back Musa (test) ===%b\n' '{{ BOLD }}' '{{ NC }}'
 
@@ -120,7 +120,7 @@ verify:
     set -euo pipefail
     printf '%b=== Verify test ===%b\n' '{{ BOLD }}' '{{ NC }}'
 
-    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
+    hosts=("test.app1.app.musa" "test.app2.app.musa" "test.bak.backup.musa")
 
     echo "--- DNS ---"
     for host in "${hosts[@]}"; do
@@ -140,7 +140,7 @@ validate: verify
     set -euo pipefail
     printf '%b=== Validate test (Musa / 3-Node HA Cluster) ===%b\n' '{{ BOLD }}' '{{ NC }}'
 
-    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
+    hosts=("test.app1.app.musa" "test.app2.app.musa" "test.bak.backup.musa")
 
     for host in "${hosts[@]}"; do
         printf '%b--- %s.lan ---%b\n' '{{ BOLD }}' "$host" '{{ NC }}'
@@ -183,7 +183,7 @@ validate: verify
 logs:
     #!/usr/bin/env bash
     set -euo pipefail
-    hosts=("musa-test-app1" "musa-test-app2" "musa-test-bak")
+    hosts=("test.app1.app.musa" "test.app2.app.musa" "test.bak.backup.musa")
     for host in "${hosts[@]}"; do
         printf '%b=== %s.lan ===%b\n' '{{ BOLD }}' "$host" '{{ NC }}'
         containers=$(ssh -o BatchMode=yes root@$host.lan "docker ps --format '{{ '{{' }}.Names{{ '}}' }}'" 2>/dev/null || true)
