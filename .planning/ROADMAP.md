@@ -66,10 +66,11 @@ Plans:
   2. Registry contains mgmt VLAN IP entries for 192.168.5.190, .191, .192 and transfer VLAN IP entries for 192.168.11.190, .191, .192
   3. `tofu plan` for test environment completes without referencing CA cert signing module or variables
   4. No CA-related variables, module calls, or outputs remain in musa Terraform configuration
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md — Registry VMID formalization (add vmid/node fields to musa allocations in jacaranda-inventory)
+- [ ] 07-02-PLAN.md — Terraform CA removal (remove ssh_user_ca_pubkey from musa Terraform, bump shared module)
 
 ### Phase 8: LXC Provisioning & Validation
 **Goal**: 3 test LXC containers are running on Proxmox and accessible via SSH using the per-environment key pair
@@ -158,7 +159,7 @@ Phases execute in numeric order: 7 -> 8 (v2.1), then 6-verify -> 9 -> 10 -> 11 -
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 6. Multi-Node Infrastructure | v2.0 | 2/2 | Verify pending | 2026-04-28 (code) |
-| 7. Resource Registration & Terraform Prep | v2.1 | 0/TBD | Not started | - |
+| 7. Resource Registration & Terraform Prep | v2.1 | 0/2 | Planned | - |
 | 8. LXC Provisioning & Validation | v2.1 | 0/TBD | Not started | - |
 | 9. PostgreSQL HA | v2.0 | 0/TBD | Not started | - |
 | 10. Redis HA & Backup Strategy | v2.0 | 0/TBD | Not started | - |
