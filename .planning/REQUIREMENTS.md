@@ -1,13 +1,29 @@
 # Requirements: Musa Project
 
-**Defined:** 2026-04-28
-**Core Value:** A production-grade, highly available Twenty CRM deployment that automatically recovers from single-node failures with minimal data loss and zero manual intervention
+**Defined:** 2026-05-02
+**Core Value:** A production-grade, highly available Twenty CRM deployment that automatically recovers from single-node failures with minimal data loss and zero manual intervention.
 
-## v2 Requirements
+## v2.1 Requirements
 
-Requirements for Multi-Node HA milestone. Each maps to roadmap phases.
+Requirements for SSH cert provisioning and resource registration milestone.
 
-### Infrastructure
+### Registry
+
+- [ ] **REG-01**: Formalize VMID allocations (1190, 1191, 1192) for musa service in registry
+- [ ] **REG-02**: Formalize mgmt VLAN IP allocations (192.168.5.190, 192.168.5.191, 192.168.5.192) in registry
+- [ ] **REG-03**: Formalize transfer VLAN IP allocations (192.168.11.190, 192.168.11.191, 192.168.11.192) in registry
+
+### Provisioning
+
+- [ ] **PROV-01**: Update Terraform LXC module calls to skip CA cert signing
+- [ ] **PROV-02**: Provision 3-node test LXC cluster with new SSH auth approach
+- [ ] **PROV-03**: Validate SSH connectivity to all 3 test LXCs using per-environment key
+
+## v2.0 Requirements (Carried Forward)
+
+Previous milestone requirements carried forward for future phases.
+
+### Infrastructure (v2.0)
 
 - [x] **INFRA-01**: 3 LXC containers provisioned across joseph, everette, maxwell via Terraform
 - [x] **INFRA-02**: Multi-group Ansible inventory generated (etcd_nodes, patroni_nodes, app_nodes, backup_nodes)
@@ -15,7 +31,7 @@ Requirements for Multi-Node HA milestone. Each maps to roadmap phases.
 - [x] **INFRA-04**: Test environment: 3-node HA topology deployed and functional
 - [ ] **INFRA-05**: Production environment: 3-node HA topology with production-sized resources
 
-### PostgreSQL HA
+### PostgreSQL HA (v2.0)
 
 - [ ] **PGHA-01**: 3-node Patroni cluster with automatic leader election via etcd
 - [ ] **PGHA-02**: Automatic failover when primary node fails (< 60s recovery)
@@ -25,14 +41,14 @@ Requirements for Multi-Node HA milestone. Each maps to roadmap phases.
 - [ ] **PGHA-06**: Custom Patroni bootstrap from pgBackRest for fast replica rebuilds
 - [ ] **PGHA-07**: Existing single-node PG data migrated to Patroni cluster without data loss
 
-### Redis HA
+### Redis HA (v2.0)
 
 - [ ] **RDHA-01**: Redis Sentinel with 3 sentinels across all nodes (quorum=2)
 - [ ] **RDHA-02**: 1 Redis master + 2 replicas with automatic failover
 - [ ] **RDHA-03**: Sentinel announce-ip configured for Docker cross-node discovery
 - [ ] **RDHA-04**: Twenty CRM configured with Sentinel-aware Redis client
 
-### Backup & Recovery
+### Backup & Recovery (v2.0)
 
 - [ ] **BKUP-01**: pgBackRest continuous WAL archiving for PITR
 - [ ] **BKUP-02**: Scheduled full backups (weekly) and differential backups (daily) via pgBackRest
@@ -41,7 +57,7 @@ Requirements for Multi-Node HA milestone. Each maps to roadmap phases.
 - [ ] **BKUP-05**: pg_dump GFS rotation: daily/7d, weekly/4w, monthly/12mo
 - [ ] **BKUP-06**: Point-in-time restore procedure documented and tested
 
-### Application HA
+### Application HA (v2.0)
 
 - [ ] **APHA-01**: Twenty CRM server + worker running on 2 nodes
 - [ ] **APHA-02**: Dual Cloudflare Tunnel (same token, both app nodes) for ingress failover
@@ -49,47 +65,12 @@ Requirements for Multi-Node HA milestone. Each maps to roadmap phases.
 - [ ] **APHA-04**: Health endpoint monitoring via Patroni REST API integrated into validate recipes
 - [ ] **APHA-05**: `just test::validate` checks all HA component health (etcd, Patroni, Sentinel, app)
 
-### Validation
+### Validation (v2.0)
 
 - [ ] **VALD-01**: Manual failover test recipe for PostgreSQL (kill primary, verify promotion)
 - [ ] **VALD-02**: Manual failover test recipe for Redis (kill master, verify Sentinel promotion)
 - [ ] **VALD-03**: Manual failover test recipe for app/tunnel (kill app node, verify traffic reroute)
 - [ ] **VALD-04**: End-to-end HA validation: single node failure doesn't disrupt service
-
-## v1 Requirements (Completed / Partial)
-
-Previous milestone requirements. Marked with completion status.
-
-### Pipeline
-
-- [x] **PIPE-03**: `just test::validate` confirms all 9 containers healthy
-- [x] **PIPE-04**: `just check-secrets` passes for all 7 1Password items
-- [ ] **PIPE-01**: `just test::full` runs end-to-end without errors (not validated)
-- [ ] **PIPE-02**: `just test::deploy` re-deploys idempotently (not validated)
-
-### Image Pinning
-
-- [x] **IMGP-01**: Backup container pinned to specific version tag
-- [x] **IMGP-02**: Rollup container pinned to specific version tag
-- [x] **IMGP-03**: Webhook containers pinned to specific version tags
-
-### Health Checks
-
-- [x] **HLTH-01**: Docker Compose health checks: 10s interval, 5 retries max
-- [x] **HLTH-03**: Ansible health check tasks include explicit curl timeouts
-- [ ] **HLTH-02**: External URL check via Cloudflare Tunnel (deferred — superseded by APHA-05)
-
-### Configuration
-
-- [x] **CONF-01**: Domain references use single variable source
-- [x] **CONF-02**: Rollback recipe exists
-- [x] **CONF-03**: Secrets exposure documented
-
-### Upgrade
-
-- [ ] **UPGR-01**: Twenty CRM v1.18.0 (deferred — already running v1.18 manually)
-- [ ] **UPGR-02**: Database migrations (completed manually)
-- [ ] **UPGR-03**: External access post-upgrade (completed manually)
 
 ## Future Requirements
 
@@ -112,62 +93,33 @@ Deferred to future milestones.
 
 | Feature | Reason |
 |---------|--------|
-| Docker Swarm / Kubernetes | Overkill for 3-node homelab; Docker Compose per node proven |
-| Docker overlay networking | Direct VLAN networking between LXCs simpler and proven |
+| SSH key generation | User handles manually, stores in 1Password |
+| SSH config setup | User configures IdentityFile routing |
+| Prod environment provisioning | Test first, prod in later milestone |
+| Full Twenty CRM stack deploy | Separate milestone after infra validated |
+| Ansible role updates | Not needed for provisioning-only scope |
+| CA infrastructure | Deliberately replaced by per-environment keys |
+| Docker Swarm / Kubernetes | Overkill for 3-node homelab |
 | Redis Cluster (sharding) | Sentinel sufficient for CRM workload |
-| HAProxy for PG connection routing | Patroni handles failover; app reconnects directly |
-| PgBouncer connection pooling | Not needed at CRM scale |
-| Citus distributed PostgreSQL | Unnecessary complexity for CRM data volume |
-| Consul / ZooKeeper | etcd is Patroni's primary target, less overhead |
-| Synchronous replication | Higher write latency; async sufficient for CRM |
-| Active-active PostgreSQL | Single-primary with auto-failover via Patroni |
-| Centralized log aggregation | Future milestone |
-| Automated scaling | Fixed 3-node topology |
-| Blue-green deployment | Failover handles availability |
 
 ## Traceability
 
-Updated during roadmap creation (2026-04-27).
+Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 6 | Pending |
-| INFRA-02 | Phase 6 | Pending |
-| INFRA-03 | Phase 6 | Pending |
-| INFRA-04 | Phase 6 | Complete |
-| INFRA-05 | Phase 10 | Pending |
-| PGHA-01 | Phase 7 | Pending |
-| PGHA-02 | Phase 7 | Pending |
-| PGHA-03 | Phase 7 | Pending |
-| PGHA-04 | Phase 7 | Pending |
-| PGHA-05 | Phase 7 | Pending |
-| PGHA-06 | Phase 7 | Pending |
-| PGHA-07 | Phase 7 | Pending |
-| RDHA-01 | Phase 8 | Pending |
-| RDHA-02 | Phase 8 | Pending |
-| RDHA-03 | Phase 8 | Pending |
-| RDHA-04 | Phase 8 | Pending |
-| BKUP-01 | Phase 8 | Pending |
-| BKUP-02 | Phase 8 | Pending |
-| BKUP-03 | Phase 8 | Pending |
-| BKUP-04 | Phase 8 | Pending |
-| BKUP-05 | Phase 8 | Pending |
-| BKUP-06 | Phase 8 | Pending |
-| APHA-01 | Phase 9 | Pending |
-| APHA-02 | Phase 9 | Pending |
-| APHA-03 | Phase 9 | Pending |
-| APHA-04 | Phase 9 | Pending |
-| APHA-05 | Phase 9 | Pending |
-| VALD-01 | Phase 9 | Pending |
-| VALD-02 | Phase 9 | Pending |
-| VALD-03 | Phase 9 | Pending |
-| VALD-04 | Phase 9 | Pending |
+| REG-01 | — | Pending |
+| REG-02 | — | Pending |
+| REG-03 | — | Pending |
+| PROV-01 | — | Pending |
+| PROV-02 | — | Pending |
+| PROV-03 | — | Pending |
 
 **Coverage:**
-- v2 requirements: 31 total
-- Mapped to phases: 31/31
-- Unmapped: 0
+- v2.1 requirements: 6 total
+- Mapped to phases: 0
+- Unmapped: 6
 
 ---
-*Requirements defined: 2026-04-28*
-*Last updated: 2026-04-27 after v2.0 roadmap creation*
+*Requirements defined: 2026-05-02*
+*Last updated: 2026-05-02 after initial definition*
