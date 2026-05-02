@@ -8,19 +8,17 @@ Infrastructure-as-Code repository for deploying Twenty CRM on Proxmox with high 
 
 A production-grade, highly available Twenty CRM deployment that automatically recovers from single-node failures with minimal data loss (seconds via PITR) and zero manual intervention.
 
-## Current Milestone: v2.0 Multi-Node HA
+## Current Milestone: v2.1 SSH Cert Provisioning & Resource Registration
 
-**Goal:** Transform single-node test deployment into a production-ready, highly available architecture across 3 Proxmox nodes with automated failover for PostgreSQL, Redis, and application layers.
+**Goal:** Replace CA-based SSH auth with per-environment SSH key pairs and formalize resource allocations via registry, unblocking immediate infrastructure provisioning.
 
 **Target features:**
-- Patroni PostgreSQL cluster (3-node with etcd consensus)
-- Redis Sentinel HA (2 data nodes + 3 sentinels)
-- Dual Twenty CRM app instances
-- Dual Cloudflare Tunnel ingress (both app nodes)
-- pgBackRest PITR (continuous WAL archiving)
-- GFS backup rotation (hourly/daily/weekly/monthly)
-- Test environment first (3-node, same topology as prod)
-- Production environment (3-node, larger resources)
+- Per-environment SSH key pairs (test + prod), stored in 1Password
+- SSH config identity routing for musa hosts
+- Skip CA cert signing in LXC module (remove CA dependency)
+- Formalize existing resource allocations (VMIDs 1190-1192, IPs .190-.192) via registry
+- Provision 3-node test LXC infrastructure with new SSH auth
+- Validate SSH connectivity to all provisioned LXCs
 
 ## Requirements
 
@@ -45,17 +43,13 @@ A production-grade, highly available Twenty CRM deployment that automatically re
 
 <!-- Current scope — what this milestone delivers. -->
 
-- [ ] 3-node Patroni PostgreSQL cluster with automatic failover
-- [ ] etcd consensus cluster (3 nodes)
-- [ ] Redis Sentinel HA (2 data + 3 sentinel)
-- [ ] Dual Twenty CRM app instances across 2 nodes
-- [ ] Dual Cloudflare Tunnel ingress (both app nodes, Cloudflare load-balances)
-- [ ] pgBackRest PITR with continuous WAL archiving
-- [ ] GFS backup rotation: hourly/24h, daily/7d, weekly/4w, monthly/12mo
-- [ ] Terraform multi-node LXC provisioning (3 instances per environment)
-- [ ] Test environment: 3-node HA topology (smaller resources)
-- [ ] Production environment: 3-node HA topology (production resources)
-- [ ] Failover validation (PG, Redis, app layer)
+- [ ] SSH key pair for musa-test environment, stored in 1Password
+- [ ] SSH key pair for musa-prod environment, stored in 1Password
+- [ ] SSH config identity routing for musa host patterns
+- [ ] LXC module calls skip CA cert signing (no CA dependency)
+- [ ] Formalize existing allocations (VMIDs 1190-1192, IPs .190-.192) in registry
+- [ ] Provision 3-node test LXC infrastructure with new SSH auth
+- [ ] Validate SSH connectivity to all 3 test LXCs
 
 ### Out of Scope
 
@@ -101,4 +95,22 @@ Current test single-node LXC (VMID 1180 on joseph) will be replaced by the 3-nod
 | GFS + PITR (both) | Defense in depth: PITR for surgical recovery, GFS for portable snapshots | — Pending |
 
 ---
-*Last updated: 2026-04-27 after v2.0 milestone initialization*
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+*Last updated: 2026-05-02 after v2.1 milestone initialization*
