@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: SSH Cert Provisioning & Resource Registration
-status: planning
+status: ready_to_plan
 stopped_at: null
 last_updated: "2026-05-02"
 last_activity: 2026-05-02
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-02)
 
 **Core value:** A production-grade, highly available Twenty CRM deployment that automatically recovers from single-node failures
-**Current focus:** Defining requirements for v2.1
+**Current focus:** Phase 7 — Resource Registration & Terraform Prep
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 7 of 8 (Resource Registration & Terraform Prep) [v2.1 scope: Phases 7-8]
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-02 — Milestone v2.1 started
+Status: Ready to plan
+Last activity: 2026-05-02 — Roadmap created for v2.1
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -52,11 +54,10 @@ Last activity: 2026-05-02 — Milestone v2.1 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Docker-in-LXC pattern validated in v1.17 (proven approach)
-- 1 LXC per Proxmox node, Docker Compose handles internal services
 - Per-environment SSH key pairs replace CA-based signing
 - SSH keys stored in 1Password, SSH config handles identity routing
 - Existing VMID/IP allocations (1190-1192, .190-.192) formalized via registry
+- v2.0 Phases 7-10 renumbered to 9-12 to accommodate v2.1 insertion
 
 ### Carried from v2.0
 
@@ -76,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-02
-Stopped at: null
+Stopped at: Roadmap created for v2.1 milestone
 Resume file: None
