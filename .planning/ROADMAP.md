@@ -25,7 +25,7 @@ Phase 5 consolidated Phases 1-4. Shipped: external URL validation, GHCR image pi
 
 **Milestone Goal:** Replace CA-based SSH auth with per-environment SSH key pairs and formalize resource allocations via registry, unblocking immediate infrastructure provisioning.
 
-- [ ] **Phase 7: Resource Registration & Terraform Prep** - Formalize VMID/IP allocations in registry and update Terraform to skip CA cert signing
+- [x] **Phase 7: Resource Registration & Terraform Prep** - Formalize VMID/IP allocations in registry and update Terraform to skip CA cert signing (completed 2026-05-02)
 - [ ] **Phase 8: LXC Provisioning & Validation** - Provision 3-node test LXCs and validate SSH connectivity
 
 ### v2.0 Multi-Node HA (Planned)
@@ -66,11 +66,11 @@ Plans:
   2. Registry contains mgmt VLAN IP entries for 192.168.5.190, .191, .192 and transfer VLAN IP entries for 192.168.11.190, .191, .192
   3. `tofu plan` for test environment completes without referencing CA cert signing module or variables
   4. No CA-related variables, module calls, or outputs remain in musa Terraform configuration
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 07-01-PLAN.md — Registry VMID formalization (add vmid/node fields to musa allocations in jacaranda-inventory)
-- [ ] 07-02-PLAN.md — Terraform CA removal (remove ssh_user_ca_pubkey from musa Terraform, bump shared module)
+- [x] 07-01-PLAN.md — Registry VMID formalization (add vmid/node fields to musa allocations in jacaranda-inventory)
+- [x] 07-02-PLAN.md — Terraform CA removal (remove ssh_user_ca_pubkey from musa Terraform, bump shared module to v1.5.0)
 
 ### Phase 8: LXC Provisioning & Validation
 **Goal**: 3 test LXC containers are running on Proxmox and accessible via SSH using the per-environment key pair
@@ -81,10 +81,10 @@ Plans:
   2. `ssh root@test.app1.app.musa.lan` connects successfully using the musa-test key pair (identity routed via SSH config)
   3. SSH connectivity is confirmed to all 3 hosts (test.app1.app.musa, test.app2.app.musa, test.bak.backup.musa)
   4. Docker is functional inside each LXC (`docker ps` runs without error on all 3 hosts)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 08-01: TBD
+- [ ] 08-01-PLAN.md — Provision 3-node test LXCs and validate SSH + Docker connectivity
 
 ### Phase 9: PostgreSQL HA
 **Goal**: A 3-node Patroni PostgreSQL cluster with automatic failover is running, and existing data has been migrated from the single-node deployment without loss
@@ -159,7 +159,7 @@ Phases execute in numeric order: 7 -> 8 (v2.1), then 6-verify -> 9 -> 10 -> 11 -
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 6. Multi-Node Infrastructure | v2.0 | 2/2 | Verify pending | 2026-04-28 (code) |
-| 7. Resource Registration & Terraform Prep | v2.1 | 0/2 | Planned | - |
+| 7. Resource Registration & Terraform Prep | v2.1 | 2/2 | Complete | 2026-05-02 |
 | 8. LXC Provisioning & Validation | v2.1 | 0/TBD | Not started | - |
 | 9. PostgreSQL HA | v2.0 | 0/TBD | Not started | - |
 | 10. Redis HA & Backup Strategy | v2.0 | 0/TBD | Not started | - |
