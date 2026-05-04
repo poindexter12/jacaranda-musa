@@ -35,6 +35,10 @@ ANSIBLE_PYTHON_INTERPRETER = "/usr/bin/python3"
 ANSIBLE_SSH_PIPELINING = "True"
 ANSIBLE_SSH_ARGS = "-o ControlMaster=auto -o ControlPersist=60s -o IdentitiesOnly=yes"
 
+# Registry (jacaranda-inventory)
+REGISTRY_ROOT = "{{config_root}}/../jacaranda-inventory"
+REGISTRY_OWNER = "ghcr.io/poindexter12/jacaranda-musa"
+
 # Just settings
 JUST_UNSTABLE = "1"
 JUST_COMMAND_COLOR = "cyan"
