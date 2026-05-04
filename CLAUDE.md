@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Purpose:** Twenty CRM at musa-project-test.joeseymour.io with SWAG + Cloudflare Tunnel on a single LXC
 **Repository:** https://github.com/poindexter12/jacaranda-musa
-**Shared Libraries:** `lib/` submodule (jacaranda-shared-libs v1.4.0)
+**Shared Libraries:** `lib/` submodule (jacaranda-shared-libs v1.5.0)
 **Secrets:** 1Password `op://Homelab/musa-project-crm-test/*` + shared Cloudflare/GitHub items
 **Logs:** `ansible/logs/` (verbose Ansible output)
 **Tool versions:** `mise.toml` (canonical source — just, opentofu, uv, pre-commit)
@@ -118,7 +118,7 @@ jacaranda-musa/
 ├── scripts/
 │   ├── op-read                        # 1Password secret reading script
 │   └── op-connect.sh                  # 1Password Connect injection
-├── lib/                               # submodule @ v1.4.0 (jacaranda-shared-libs)
+├── lib/                               # submodule @ v1.5.0 (jacaranda-shared-libs)
 │   └── infrastructure/
 │       ├── just/                      # Shared justfile utilities
 │       └── terraform/modules/         # Shared terraform modules (LXC, base-infra, etc.)
@@ -334,7 +334,7 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-backup --tail=20"
 - **IP allocation:** Use NetBox IPAM skill or ask user for IP assignment
 - **DNS records:** Export dns_entries/cname_entries outputs, hub aggregation handles Pi-hole registration
 - **Base infrastructure access:** Always use base-infra module (proxmox_api_url, vlans, ssh_public_key, etc.)
-- **Terraform modules:** Always source from lib/ submodule at tagged version (currently v1.4.0)
+- **Terraform modules:** Always source from lib/ submodule at tagged version (currently v1.5.0)
 
 **If a skill is missing:** Ask user for guidance rather than creating manual workarounds.
 
@@ -350,7 +350,7 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-backup --tail=20"
 
 **Never use terraform_remote_state** — always consume base-infra module for infrastructure values.
 
-**Module versioning:** lib/ submodule pinned to v1.4.0. Update via `git submodule update --remote lib` and commit new submodule reference.
+**Module versioning:** lib/ submodule pinned to v1.5.0. Update via `git submodule update --remote lib` and commit new submodule reference.
 
 ## Dependencies
 
@@ -361,7 +361,7 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-backup --tail=20"
 | Pi-hole DNS | .lan hostname resolution | Hub managed (aggregates dns_entries/cname_entries) |
 | GHCR | Private container images (backup, rollup, webhook) | User authenticated |
 | Base infrastructure | Proxmox API, VLANs, SSH keys, DNS, storage | Hub terraform (via base-infra module) |
-| Shared libraries | Terraform modules, justfile utilities | lib/ submodule (jacaranda-shared-libs v1.4.0) |
+| Shared libraries | Terraform modules, justfile utilities | lib/ submodule (jacaranda-shared-libs v1.5.0) |
 
 ## Related Documentation
 

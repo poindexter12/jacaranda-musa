@@ -21,3 +21,6 @@ uv.lock
 
 # mise
 .mise.local.toml
+
+# Claude Code plugins
+.remember/

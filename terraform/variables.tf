@@ -52,11 +52,6 @@ variable "ssh_public_key" {
   type        = string
 }
 
-variable "ssh_user_ca_pubkey" {
-  description = "SSH User CA public key for certificate authentication"
-  type        = string
-}
-
 variable "dns_server" {
   description = "DNS server IP for bootstrap"
   type        = string

@@ -20,6 +20,9 @@ import 'lib/infrastructure/just/ansible.just'
 # Terraform Operations
 # ============================================================================
 
+# SSH key injected via TF_VAR — Terraform reads TF_VAR_ssh_public_key automatically
+export TF_VAR_ssh_public_key := `op-read 'op://Homelab/musa-project-test/public key'`
+
 # Initialize terraform
 init: (tf-init "test")
 

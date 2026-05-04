@@ -83,7 +83,6 @@ module "lxc_app" {
   # Infrastructure from base
   vlans              = var.vlans
   ssh_public_key     = var.ssh_public_key
-  ssh_user_ca_pubkey = var.ssh_user_ca_pubkey
   dns_server         = var.dns_server
   ostemplate         = var.ostemplate
   storage            = var.storage
@@ -113,7 +112,6 @@ module "lxc_bak" {
   # Infrastructure from base
   vlans              = var.vlans
   ssh_public_key     = var.ssh_public_key
-  ssh_user_ca_pubkey = var.ssh_user_ca_pubkey
   dns_server         = var.dns_server
   ostemplate         = var.ostemplate
   storage            = var.storage

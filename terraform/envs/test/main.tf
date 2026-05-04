@@ -59,7 +59,7 @@ check "vmid_allocation" {
 # ============================================================================
 
 provider "proxmox" {
-  pm_api_url          = local.base.proxmox_api_url
+  pm_api_url          = "https://192.168.5.5:8006/api2/json"
   pm_api_token_id     = local.base.proxmox_api_token_id
   pm_api_token_secret = local.base.proxmox_api_token_secret
   pm_tls_insecure     = true
@@ -115,8 +115,7 @@ module "musa" {
 
   # Infrastructure from base
   vlans              = local.base.vlans
-  ssh_public_key     = local.base.ssh_public_key
-  ssh_user_ca_pubkey = local.base.ssh_user_ca_pubkey
+  ssh_public_key     = var.ssh_public_key
   dns_server         = local.base.dns_primary
   ostemplate         = "${local.base.lxc_template_storage}:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
   storage            = local.base.storage.ceph.name
