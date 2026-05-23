@@ -14,8 +14,8 @@ terraform {
 
   required_providers {
     proxmox = {
-      source  = "Telmate/proxmox"
-      version = "= 3.0.2-rc07"
+      source  = "bpg/proxmox"
+      version = "~> 0.101"
     }
   }
 }
@@ -38,10 +38,14 @@ locals {
 # ============================================================================
 
 provider "proxmox" {
-  pm_api_url          = local.base.proxmox_api_url
-  pm_api_token_id     = local.base.proxmox_api_token_id
-  pm_api_token_secret = local.base.proxmox_api_token_secret
-  pm_tls_insecure     = true
+  endpoint  = local.base.proxmox_api_url
+  api_token = "${local.base.proxmox_api_token_id}=${local.base.proxmox_api_token_secret}"
+  insecure  = true
+
+  ssh {
+    agent    = true
+    username = "root"
+  }
 }
 
 # Placeholder — no resources defined yet

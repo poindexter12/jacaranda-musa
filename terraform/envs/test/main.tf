@@ -16,8 +16,8 @@ terraform {
 
   required_providers {
     proxmox = {
-      source  = "Telmate/proxmox"
-      version = "= 3.0.2-rc07"
+      source  = "bpg/proxmox"
+      version = "~> 0.101"
     }
   }
 }
@@ -59,10 +59,14 @@ check "vmid_allocation" {
 # ============================================================================
 
 provider "proxmox" {
-  pm_api_url          = "https://192.168.5.5:8006/api2/json"
-  pm_api_token_id     = local.base.proxmox_api_token_id
-  pm_api_token_secret = local.base.proxmox_api_token_secret
-  pm_tls_insecure     = true
+  endpoint  = "https://192.168.5.5:8006/"
+  api_token = "${local.base.proxmox_api_token_id}=${local.base.proxmox_api_token_secret}"
+  insecure  = true
+
+  ssh {
+    agent    = true
+    username = "root"
+  }
 }
 
 # ============================================================================
@@ -110,17 +114,14 @@ module "musa" {
   env       = local.env
   instances = local.musa_instances
 
-  # Custom inventory generation (per D-09)
-  ansible_inventory_path = "${path.module}/../../ansible/inventory/${local.env}.yaml"
+  ansible_inventory_path = "${path.module}/../../../ansible/inventory/${local.env}.yaml"
 
-  # Infrastructure from base
-  vlans              = local.base.vlans
-  ssh_public_key     = var.ssh_public_key
-  dns_server         = local.base.dns_primary
-  ostemplate         = "${local.base.lxc_template_storage}:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
-  storage            = local.base.storage.ceph.name
+  vlans          = local.base.vlans
+  ssh_public_key = var.ssh_public_key
+  dns_server     = local.base.dns_primary
+  ostemplate     = "${local.base.lxc_template_storage}:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
+  storage        = local.base.storage.ceph.name
 
-  # Default resources (overridden per-instance where needed, per D-13)
   cores     = 4
   memory    = 4096
   disk_size = "20G"

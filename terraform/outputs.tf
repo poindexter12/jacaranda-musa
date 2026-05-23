@@ -8,17 +8,29 @@
 
 output "instances" {
   description = "Map of all Musa instances with details"
-  value       = merge(module.lxc_app.instances, module.lxc_bak.instances)
+  value = {
+    for name, ct in proxmox_virtual_environment_container.musa : name => {
+      vmid        = ct.vm_id
+      name        = name
+      node        = ct.node_name
+      mgmt_ip     = var.instances[name].mgmt_ip
+      transfer_ip = var.instances[name].transfer_ip
+    }
+  }
 }
 
 output "mgmt_ips" {
   description = "Map of hostname to management IP (.5.x)"
-  value       = merge(module.lxc_app.mgmt_ips, module.lxc_bak.mgmt_ips)
+  value = {
+    for name, inst in var.instances : name => inst.mgmt_ip
+  }
 }
 
 output "transfer_ips" {
   description = "Map of hostname to transfer IP (.11.x) for cluster traffic"
-  value       = { for name, inst in var.instances : name => inst.transfer_ip }
+  value = {
+    for name, inst in var.instances : name => inst.transfer_ip
+  }
 }
 
 output "ansible_inventory_path" {
@@ -32,19 +44,16 @@ output "ansible_inventory_path" {
 
 output "dns_entries" {
   description = "DNS A record entries for Pi-hole (hostname.network => IP)"
-  value       = merge(module.lxc_app.dns_entries, module.lxc_bak.dns_entries)
+  value = merge(
+    { for name, inst in var.instances : "${name}.mgmt" => inst.mgmt_ip },
+    { for name, inst in var.instances : "${name}.transfer" => inst.transfer_ip }
+  )
 }
 
 output "cname_entries" {
-  description = "CNAME entries for Pi-hole (bare => .lan => .mgmt)"
+  description = "CNAME entries for Pi-hole (.lan => .mgmt for SSH cert auth)"
   value = merge(
-    # Instance CNAMEs from both LXC module calls (for SSH cert auth)
-    module.lxc_app.cname_entries,
-    module.lxc_bak.cname_entries,
-    # Bare name convenience CNAMEs
-    {
-      for name, inst in var.instances :
-      name => "${name}.lan"
-    }
+    { for name, inst in var.instances : "${name}.lan" => "${name}.mgmt" },
+    { for name, inst in var.instances : name => "${name}.lan" }
   )
 }

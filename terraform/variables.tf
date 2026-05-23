@@ -11,12 +11,12 @@ variable "instances" {
   type = map(object({
     vmid        = number
     node        = string
-    mgmt_ip     = string              # 192.168.5.x - SSH/management
-    transfer_ip = string              # 192.168.11.x - cluster traffic (per D-05)
-    node_role   = string              # "app" or "backup" (per D-15)
-    cores       = optional(number)    # Override default cores (per D-13)
-    memory      = optional(number)    # Override default memory
-    disk_size   = optional(string)    # Override default disk size
+    mgmt_ip     = string
+    transfer_ip = string
+    node_role   = string
+    cores       = optional(number)
+    memory      = optional(number)
+    disk_size   = optional(string)
   }))
 }
 
@@ -32,7 +32,7 @@ variable "ansible_inventory_path" {
 }
 
 # ============================================================================
-# Base Infrastructure (from terraform_remote_state)
+# Base Infrastructure
 # ============================================================================
 
 variable "vlans" {
@@ -50,6 +50,12 @@ variable "vlans" {
 variable "ssh_public_key" {
   description = "SSH public key for root access"
   type        = string
+}
+
+variable "ssh_user_ca_pubkey" {
+  description = "SSH User CA public key for cert-based authentication (empty string skips CA provisioners)"
+  type        = string
+  default     = ""
 }
 
 variable "dns_server" {
@@ -74,19 +80,45 @@ variable "storage" {
 }
 
 variable "cores" {
-  description = "Number of CPU cores per container (default for app nodes)"
+  description = "Default CPU cores per container (overridden per-instance)"
   type        = number
   default     = 4
 }
 
 variable "memory" {
-  description = "Memory in MB per container (default for app nodes)"
+  description = "Default memory in MB per container (overridden per-instance)"
   type        = number
   default     = 4096
 }
 
 variable "disk_size" {
-  description = "Root filesystem size (default for app nodes)"
+  description = "Default root filesystem size (overridden per-instance)"
   type        = string
   default     = "20G"
+}
+
+# ============================================================================
+# SSH CA
+# ============================================================================
+
+variable "step_ca_host" {
+  description = "step-ca hostname for SSH cert signing"
+  type        = string
+  default     = "step-ca.lan"
+}
+
+# ============================================================================
+# HA Configuration
+# ============================================================================
+
+variable "ha_enabled" {
+  description = "Enable Proxmox HA for containers"
+  type        = bool
+  default     = false
+}
+
+variable "ha_anti_affinity_groups" {
+  description = "List of instance name groups that should have anti-affinity (kept on separate nodes)"
+  type        = list(list(string))
+  default     = []
 }
