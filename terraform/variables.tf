@@ -112,13 +112,7 @@ variable "step_ca_host" {
 # ============================================================================
 
 variable "ha_enabled" {
-  description = "Enable Proxmox HA for containers"
+  description = "Enable Proxmox HA for containers (failover to any cluster node on host failure)"
   type        = bool
   default     = false
-}
-
-variable "ha_anti_affinity_groups" {
-  description = "List of instance name groups that should have anti-affinity (kept on separate nodes)"
-  type        = list(list(string))
-  default     = []
 }

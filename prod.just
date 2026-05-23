@@ -8,6 +8,8 @@
 import 'lib/infrastructure/just/terraform.just'
 import 'lib/infrastructure/just/ansible.just'
 
-# Show placeholder message
+# Show available recipes for this module
 @_default:
-    echo "Production environment not yet configured. Use test:: recipes."
+    just --list prod
+    echo
+    echo "Note: production environment not yet configured. Use test:: recipes."

@@ -1,17 +1,10 @@
 # ============================================================================
-# Musa LXC Module (3-Node HA Cluster)
+# Musa LXC Module
 # ============================================================================
-# Creates LXC containers for the Musa Project (Twenty CRM HA) using the bpg
-# Proxmox provider directly (decoupled from shared LXC module).
-#
-# Per-instance resource overrides (cores, memory, disk_size) allow different
-# tiers (app vs backup) without separate module calls.
-#
-# VMID Allocation: 1190-1192 (4-digit TSSS: 1xxx LXC + IP octet)
-# IP Allocation:
-#   test.app1.app.musa:     192.168.5.190 / 192.168.11.190 (VMID 1190, joseph)
-#   test.app2.app.musa:     192.168.5.191 / 192.168.11.191 (VMID 1191, everette)
-#   test.bak.backup.musa:   192.168.5.192 / 192.168.11.192 (VMID 1192, maxwell)
+# Creates Twenty CRM LXC container(s) on Proxmox via the bpg provider.
+# Multi-instance via `instances` map; today we run a single instance and
+# rely on Proxmox HA (see ha_enabled) for cross-node failover rather than
+# application-level replication.
 
 terraform {
   required_version = ">= 1.0"
@@ -249,51 +242,8 @@ resource "null_resource" "ha_add" {
   depends_on = [proxmox_virtual_environment_container.musa, null_resource.verify_ssh]
 }
 
-locals {
-  ha_anti_affinity_rules = {
-    for idx, group in var.ha_anti_affinity_groups : idx => {
-      name = "musa-${idx}-anti-affinity"
-      resources = join(",", [
-        for instance_name in group : "ct:${var.instances[instance_name].vmid}"
-      ])
-    }
-  }
-}
-
-resource "null_resource" "ha_anti_affinity" {
-  for_each = var.ha_enabled && length(var.ha_anti_affinity_groups) > 0 ? local.ha_anti_affinity_rules : {}
-
-  triggers = {
-    rule_name = each.value.name
-    resources = each.value.resources
-    node      = var.instances[var.ha_anti_affinity_groups[each.key][0]].node
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Creating anti-affinity rule: ${each.value.name} ==="
-
-      if ssh root@${self.triggers.node}.lan "ha-manager rules status resource-affinity ${each.value.name}" >/dev/null 2>&1; then
-        ssh root@${self.triggers.node}.lan "ha-manager rules set resource-affinity ${each.value.name} --resources ${each.value.resources}"
-      else
-        ssh root@${self.triggers.node}.lan "ha-manager rules add resource-affinity ${each.value.name} --affinity negative --resources ${each.value.resources}"
-      fi
-    EOT
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = <<-EOT
-      ssh root@${self.triggers.node}.lan "ha-manager rules remove resource-affinity ${self.triggers.rule_name} 2>/dev/null || true"
-    EOT
-  }
-
-  depends_on = [null_resource.ha_add]
-}
-
 # ============================================================================
-# Custom Multi-Group Ansible Inventory
+# Ansible Inventory
 # ============================================================================
 
 locals {
@@ -307,33 +257,11 @@ locals {
     }
   }
 
-  app_host_names    = [for name, inst in var.instances : name if inst.node_role == "app"]
-  backup_host_names = [for name, inst in var.instances : name if inst.node_role == "backup"]
-
-  app_hosts = {
-    for name in local.app_host_names : name => local.inventory_hosts[name]
-  }
-  backup_hosts = {
-    for name in local.backup_host_names : name => local.inventory_hosts[name]
-  }
-
   ansible_inventory = {
     all = {
       children = {
         musa = {
           hosts = local.inventory_hosts
-        }
-        etcd_nodes = {
-          hosts = local.inventory_hosts
-        }
-        patroni_nodes = {
-          hosts = local.inventory_hosts
-        }
-        app_nodes = {
-          hosts = local.app_hosts
-        }
-        backup_nodes = {
-          hosts = local.backup_hosts
         }
       }
       vars = {

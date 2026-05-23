@@ -1,6 +1,7 @@
-# Musa Project — Twenty CRM Service (3-Node HA Cluster)
+# Musa Project — Twenty CRM Service (single LXC, Proxmox HA-managed)
 #
-# 3 LXCs across joseph, everette, maxwell for HA Twenty CRM.
+# 1 Twenty CRM LXC with Proxmox HA failover across the cluster (joseph,
+# everette, maxwell). Disk on Ceph so the LXC migrates without data copy.
 #
 # Usage: just <module>::<recipe>
 #
@@ -9,7 +10,13 @@
 #   just test::validate          # Check service health
 #   just check-secrets           # Verify 1Password items exist
 
-import 'lib/infrastructure/just/styles.just'
+set allow-duplicate-variables := true
+
+# styles.just is optional — if the lib/ submodule is initialized it provides
+# real ANSI codes; otherwise _styles-fallback.just supplies blanks so recipes
+# still parse. First import wins under allow-duplicate-variables.
+import? 'lib/infrastructure/just/styles.just'
+import '_styles-fallback.just'
 import 'lib/infrastructure/just/secrets.just'
 
 # Module declarations

@@ -84,13 +84,15 @@ Internet -> Cloudflare Edge -> Tunnel
 
 ## Node Allocation
 
-| Hostname | VMID | Node | Mgmt IP | Transfer IP | Role | Environment |
-| -------- | ---- | ---- | ------- | ----------- | ---- | ----------- |
-| test.app1.app.musa | 1190 | joseph | 192.168.5.190 | 192.168.11.190 | app | test |
-| test.app2.app.musa | 1191 | everette | 192.168.5.191 | 192.168.11.191 | app | test |
-| test.bak.backup.musa | 1192 | maxwell | 192.168.5.192 | 192.168.11.192 | backup | test |
+| Hostname | VMID | Initial Node | Mgmt IP | Transfer IP | Role | Environment |
+| -------- | ---- | ------------ | ------- | ----------- | ---- | ----------- |
+| test.app.musa | 1190 | joseph | 192.168.5.190 | 192.168.11.190 | app | test |
 
-**VMID Allocation:** 4-digit TSSS pattern (1xxx LXC + IP octet .190-.192)
+Single LXC, registered with Proxmox HA. If the initial node fails, Proxmox
+restarts the LXC on another cluster node (everette, maxwell, …) automatically.
+Disk lives on Ceph so failover does not copy data; IP and hostname are preserved.
+
+**VMID Allocation:** 4-digit TSSS pattern (1xxx LXC + IP octet .190)
 **Reference:** jacaranda-inventory registry (services/musa.yaml)
 
 ## Resources
@@ -128,7 +130,7 @@ jacaranda-musa/
 │   ├── outputs.tf                     # DNS entries, instance details
 │   └── envs/
 │       ├── test/
-│       │   └── main.tf                # Single instance: VMID 1180, joseph
+│       │   └── main.tf                # Single instance: VMID 1190, joseph (HA-managed)
 │       └── prod/
 │           └── main.tf                # Placeholder with base-infra module
 └── ansible/
@@ -154,10 +156,11 @@ jacaranda-musa/
 
 **Terraform creates:**
 
-- 1x LXC container on Proxmox (joseph node, VMID 1180)
-- Single NIC: eth0 (mgmt .5.180)
+- 1x LXC container on Proxmox (joseph initial placement, VMID 1190)
+- Dual NIC: eth0 (mgmt .5.190) + eth1 (transfer .11.190)
 - Docker nesting enabled (`nesting=true`)
-- Ansible inventory via LXC module's built-in generation
+- Proxmox HA registration via `ha-manager add` (failover to any cluster node)
+- Ansible inventory written to `ansible/inventory/test.yaml`
 - DNS outputs (A records + CNAMEs) for Pi-hole integration (handled by hub)
 
 **Ansible configures:**
@@ -249,17 +252,17 @@ just test::validate
 just test::logs
 
 # SSH to node
-ssh root@test.app1.app.musa.lan "docker ps"
-ssh root@test.app1.app.musa.lan "docker logs server --tail=20"
-ssh root@test.app1.app.musa.lan "docker logs twenty-swag --tail=20"
+ssh root@test.app.musa.lan "docker ps"
+ssh root@test.app.musa.lan "docker logs server --tail=20"
+ssh root@test.app.musa.lan "docker logs twenty-swag --tail=20"
 ```
 
 ### Restart Services
 
 ```bash
-ssh root@test.app1.app.musa.lan "cd /opt/musa && docker compose restart"
-ssh root@test.app1.app.musa.lan "docker restart server"
-ssh root@test.app1.app.musa.lan "docker restart twenty-swag"
+ssh root@test.app.musa.lan "cd /opt/musa && docker compose restart"
+ssh root@test.app.musa.lan "docker restart server"
+ssh root@test.app.musa.lan "docker restart twenty-swag"
 ```
 
 ### Test External Access
@@ -269,15 +272,15 @@ ssh root@test.app1.app.musa.lan "docker restart twenty-swag"
 curl -I https://musa-project-test.joeseymour.io
 
 # Local (from LXC)
-ssh root@test.app1.app.musa.lan "curl -I http://localhost:80"
-ssh root@test.app1.app.musa.lan "curl -s http://localhost:3000/healthz"
+ssh root@test.app.musa.lan "curl -I http://localhost:80"
+ssh root@test.app.musa.lan "curl -s http://localhost:3000/healthz"
 ```
 
 ### View Backups
 
 ```bash
-ssh root@test.app1.app.musa.lan "ls -lh /opt/musa/backups/"
-ssh root@test.app1.app.musa.lan "docker logs twenty-backup --tail=20"
+ssh root@test.app.musa.lan "ls -lh /opt/musa/backups/"
+ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 ```
 
 ## DO vs DON'T
@@ -285,7 +288,7 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-backup --tail=20"
 ### DO
 
 - Use `just check-secrets` before first deployment
-- Use `root@test.app1.app.musa.lan` for SSH (LXC containers use root)
+- Use `root@test.app.musa.lan` for SSH (LXC containers use root)
 - Let Ansible manage all config files on the LXC
 - Run `just test::deploy` to update (idempotent)
 - Use `just upgrade` to update OpenTofu providers
@@ -381,13 +384,13 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-backup --tail=20"
 
 ```bash
 just check-secrets  # Verify cf_api_token exists
-ssh root@test.app1.app.musa.lan "docker logs twenty-swag --tail=50"
+ssh root@test.app.musa.lan "docker logs twenty-swag --tail=50"
 ```
 
 **Check DNS challenge:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "docker logs twenty-swag | grep -i cloudflare"
+ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i cloudflare"
 ```
 
 ### Twenty CRM not accessible
@@ -395,21 +398,21 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-swag | grep -i cloudflare"
 **Check container status:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "docker ps"  # All 9 containers should be Up
-ssh root@test.app1.app.musa.lan "docker logs server --tail=50"
+ssh root@test.app.musa.lan "docker ps"  # All 9 containers should be Up
+ssh root@test.app.musa.lan "docker logs server --tail=50"
 ```
 
 **Check health endpoint:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "curl -s http://localhost:3000/healthz"
+ssh root@test.app.musa.lan "curl -s http://localhost:3000/healthz"
 ```
 
 **Check nginx proxy:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "cat /config/nginx/proxy-confs/twenty.conf"
-ssh root@test.app1.app.musa.lan "docker logs twenty-swag | grep -i twenty"
+ssh root@test.app.musa.lan "cat /config/nginx/proxy-confs/twenty.conf"
+ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i twenty"
 ```
 
 ### Cloudflare Tunnel not connecting
@@ -418,8 +421,8 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-swag | grep -i twenty"
 
 ```bash
 just check-secrets  # Verify cf_tunnel_token exists
-ssh root@test.app1.app.musa.lan "docker exec twenty-swag ps aux | grep cloudflared"
-ssh root@test.app1.app.musa.lan "docker logs twenty-swag | grep -i tunnel"
+ssh root@test.app.musa.lan "docker exec twenty-swag ps aux | grep cloudflared"
+ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i tunnel"
 ```
 
 **Verify tunnel configuration in Cloudflare Dashboard:**
@@ -433,15 +436,15 @@ ssh root@test.app1.app.musa.lan "docker logs twenty-swag | grep -i tunnel"
 **Check PostgreSQL container:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "docker logs db --tail=50"
-ssh root@test.app1.app.musa.lan "docker exec db pg_isready -U twenty"
+ssh root@test.app.musa.lan "docker logs db --tail=50"
+ssh root@test.app.musa.lan "docker exec db pg_isready -U twenty"
 ```
 
 **Check Twenty CRM database connection:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "docker logs server | grep -i database"
-ssh root@test.app1.app.musa.lan "cat /opt/musa/.env | grep PG_"
+ssh root@test.app.musa.lan "docker logs server | grep -i database"
+ssh root@test.app.musa.lan "cat /opt/musa/.env | grep PG_"
 ```
 
 ### Backups not running
@@ -449,12 +452,12 @@ ssh root@test.app1.app.musa.lan "cat /opt/musa/.env | grep PG_"
 **Check backup container:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "docker logs twenty-backup --tail=50"
-ssh root@test.app1.app.musa.lan "ls -lh /opt/musa/backups/"
+ssh root@test.app.musa.lan "docker logs twenty-backup --tail=50"
+ssh root@test.app.musa.lan "ls -lh /opt/musa/backups/"
 ```
 
 **Manual backup:**
 
 ```bash
-ssh root@test.app1.app.musa.lan "docker exec twenty-backup /backup.sh"
+ssh root@test.app.musa.lan "docker exec twenty-backup /backup.sh"
 ```

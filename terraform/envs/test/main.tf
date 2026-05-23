@@ -1,15 +1,15 @@
 # ============================================================================
-# Musa Test Environment (3-Node HA Cluster)
+# Musa Test Environment (single LXC, Proxmox HA-managed)
 # ============================================================================
-# 3 LXCs across joseph, everette, maxwell for Twenty CRM HA.
+# Single Twenty CRM LXC on joseph, registered with Proxmox HA so it will
+# automatically failover to another cluster node (everette, maxwell) if its
+# current host goes down. Disk on Ceph so the LXC migrates without data copy.
 #
-# VMID Allocation: 1190-1192 (4-digit TSSS: 1xxx LXC + IP octet)
+# VMID Allocation: 1190 (4-digit TSSS: 1xxx LXC + IP octet)
 # Reference: .claude/skills/vmid-allocation.md
 #
 # IP Allocation:
-#   test.app1.app.musa:     192.168.5.190 / 192.168.11.190 (VMID 1190, joseph)
-#   test.app2.app.musa:     192.168.5.191 / 192.168.11.191 (VMID 1191, everette)
-#   test.bak.backup.musa:   192.168.5.192 / 192.168.11.192 (VMID 1192, maxwell)
+#   test.app.musa:   192.168.5.190 / 192.168.11.190 (VMID 1190, joseph initial)
 
 terraform {
   required_version = ">= 1.0"
@@ -77,29 +77,12 @@ locals {
   env = "test"
 
   musa_instances = {
-    "test.app1.app.musa" = {
+    "test.app.musa" = {
       vmid        = 1190
       node        = "joseph"
       mgmt_ip     = "192.168.5.190"
       transfer_ip = "192.168.11.190"
       node_role   = "app"
-    }
-    "test.app2.app.musa" = {
-      vmid        = 1191
-      node        = "everette"
-      mgmt_ip     = "192.168.5.191"
-      transfer_ip = "192.168.11.191"
-      node_role   = "app"
-    }
-    "test.bak.backup.musa" = {
-      vmid        = 1192
-      node        = "maxwell"
-      mgmt_ip     = "192.168.5.192"
-      transfer_ip = "192.168.11.192"
-      node_role   = "backup"
-      cores       = 2
-      memory      = 2048
-      disk_size   = "40G"
     }
   }
 }
@@ -125,6 +108,10 @@ module "musa" {
   cores     = 4
   memory    = 4096
   disk_size = "20G"
+
+  # Register with Proxmox HA so the LXC restarts on another cluster node
+  # if its current host fails. Requires Ceph (already configured above).
+  ha_enabled = true
 }
 
 # ============================================================================
