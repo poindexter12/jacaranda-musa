@@ -7,10 +7,10 @@
 # They are not managed via mise
 
 [tools]
-just = "1.40.0"
-opentofu = "1.8.8"
-uv = "0.5.20"
-pre-commit = "4.0.1"
+just = "latest"
+opentofu = "latest"
+uv = "latest"
+pre-commit = "latest"
 # Note: direnv is a global tool, not managed per-project
 
 [settings]
@@ -18,6 +18,13 @@ pre-commit = "4.0.1"
 auto_install = true
 # Trust this config file
 trusted_config_paths = ["."]
+
+[hooks]
+# Create + sync the Python venv after `mise install`. uv sync is idempotent,
+# so re-running this on every tool install is cheap. First-time setup
+# (`mise trust && mise install`) now produces a ready-to-use .venv,
+# silencing the "no venv found at .venv" warning.
+postinstall = "uv sync"
 
 [env]
 # PATH additions for local scripts and tools

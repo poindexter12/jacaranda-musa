@@ -51,9 +51,8 @@ output "dns_entries" {
 }
 
 output "cname_entries" {
-  description = "CNAME entries for Pi-hole (.lan => .mgmt for SSH cert auth)"
-  value = merge(
-    { for name, inst in var.instances : "${name}.lan" => "${name}.mgmt" },
-    { for name, inst in var.instances : name => "${name}.lan" }
-  )
+  description = "CNAME entries for Pi-hole (bare hostname => fully-qualified .mgmt.home.arpa)"
+  value = {
+    for name, inst in var.instances : name => "${name}.mgmt.home.arpa"
+  }
 }

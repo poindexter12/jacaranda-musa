@@ -62,6 +62,9 @@ check-secrets mode="auto":
         "Homelab/cloudflare/zone_id"
         "Homelab/cloudflare/account_id"
         "Homelab/github/pat"
+        "Homelab/Jacaranda Proxmox Deploy/api token"
+        "Homelab/musa-project-test/public key"
+        "Homelab/opentofu/password"
     )
     for item in "${items[@]}"; do
         # Capture stderr only: stdout (the secret value) is discarded; stderr

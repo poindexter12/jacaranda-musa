@@ -7,7 +7,7 @@ app_data_dir: /opt/musa
 timezone: America/Denver
 
 # Twenty CRM
-twenty_tag: "v1.20.0"
+twenty_tag: "v1.23.9"
 twenty_domain: musa-project-crm-test.joeseymour.io
 # Additional hostnames that nginx will accept (experimental custom domain)
 twenty_domain_aliases:

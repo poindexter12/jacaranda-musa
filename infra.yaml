@@ -1,0 +1,40 @@
+# infra.yaml — Musa-local infrastructure topology
+#
+# SINGLE SOURCE OF TRUTH for the Proxmox/network/storage facts musa needs to
+# provision its LXC. Mirrors jacaranda-foundation/infra.yaml (same homelab,
+# same Proxmox cluster). Replaces the former `data "terraform_remote_state"`
+# read from jacaranda-infra — that repo no longer exists.
+#
+# What lives in jacaranda-inventory (registry) instead of here:
+#   - Service IP allocations (data/services/*.yaml)
+#   - VLAN CIDRs/gateways (data/vlans.yaml — but registry doesn't track
+#     bridge/mtu/domain, so the full topology must live here)
+#   - DNS server allocations (data/services/dns.yaml — musa terraform reads
+#     this at plan-time for the LXC's bootstrap resolver)
+#
+# Secrets are NOT stored here. The Proxmox API token *secret* is fetched from
+# 1Password (op://Homelab/Jacaranda Proxmox Deploy/api token) and passed in as
+# TF_VAR_proxmox_api_token_secret by test.just. Only the non-secret token id
+# lives below.
+
+proxmox:
+  api_token_id: "terraform@pve!prov" # combined with the 1Password secret as id=secret
+  tls_insecure: true                 # homelab CA / self-signed endpoint
+
+# Per-VLAN network topology. Keyed by VLAN name; the key must match VLANs in
+# jacaranda-inventory/data/vlans.yaml. Object shape matches the LXC module's
+# `vlans` variable type (id, bridge, network, gateway, domain, mtu).
+vlans:
+  trusted: {id: 0, bridge: vmbr0, network: "192.168.1", gateway: "192.168.1.1", domain: trusted, mtu: 9000}
+  mgmt: {id: 0, bridge: vmbr5, network: "192.168.5", gateway: "192.168.5.1", domain: mgmt, mtu: 9000}
+  transfer: {id: 0, bridge: vmbr11, network: "192.168.11", gateway: "192.168.11.1", domain: transfer, mtu: 9000}
+  proxmox: {id: 0, bridge: vmbr10, network: "192.168.10", gateway: "192.168.10.1", domain: proxmox, mtu: 9000}
+
+# Proxmox storage targets. `ceph.name` is the container disk datastore_id;
+# `lxc_template_storage` is where the vztmpl rootfs template lives.
+storage:
+  ceph: {name: ceph-seymour, type: rbd}
+  local: {name: local, type: dir}
+
+lxc_template_storage: local
+lxc_template: "ubuntu-24.04-standard_24.04-2_amd64.tar.zst"

@@ -137,6 +137,53 @@
   tags: [deploy]
 
 # ============================================================================
+# DATABASE INITIALIZATION
+# ============================================================================
+# Twenty's bundled entrypoint runs `database:init:prod` (creates schemas +
+# extensions) but does NOT run the entity migrations that create the actual
+# core tables (appToken, keyValuePair, user, etc.). On a fresh database the
+# server crash-loops because /healthz queries non-existent tables. We run
+# `database:migrate:prod` explicitly. Gated on a check of `core.appToken`
+# so re-deploys are no-ops.
+
+- name: Bring up db + redis (dependencies for migrate)
+  ansible.builtin.command:
+    cmd: docker compose up -d db redis
+    chdir: "{{ app_data_dir }}"
+  changed_when: false
+  tags: [deploy]
+
+- name: Wait for db to accept connections
+  ansible.builtin.command:
+    cmd: docker compose exec -T db pg_isready -U postgres -d twenty
+    chdir: "{{ app_data_dir }}"
+  register: pg_ready
+  until: pg_ready.rc == 0
+  retries: 12
+  delay: 5
+  changed_when: false
+  tags: [deploy]
+
+- name: Check whether Twenty's core entity tables exist
+  ansible.builtin.command:
+    cmd: >-
+      docker compose exec -T db psql -U postgres -d twenty -tAc
+      "SELECT to_regclass('core.\"appToken\"') IS NOT NULL"
+    chdir: "{{ app_data_dir }}"
+  register: core_tables_exist
+  changed_when: false
+  failed_when: false
+  tags: [deploy]
+
+- name: Run Twenty database migrations (first deploy only)
+  ansible.builtin.command:
+    cmd: docker compose run --rm server yarn database:migrate:prod
+    chdir: "{{ app_data_dir }}"
+  when: (core_tables_exist.stdout | default('') | trim) != 't'
+  changed_when: true
+  tags: [deploy]
+
+# ============================================================================
 # SERVICE STARTUP
 # ============================================================================
 

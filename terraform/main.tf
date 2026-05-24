@@ -151,25 +151,25 @@ resource "null_resource" "configure_ssh_ca" {
     command = <<-EOT
       set -e
 
-      NODE="${each.value.node}"
+      NODE="${each.value.node}.home.arpa"
       VMID="${each.value.vmid}"
       HOSTNAME="${each.key}"
       USER_CA='${var.ssh_user_ca_pubkey}'
 
       echo "=== Configuring SSH CA for $${HOSTNAME} (LXC $${VMID} on $${NODE}) ==="
 
-      ssh root@$${NODE}.lan "pct exec $${VMID} -- bash -c 'echo \"$${USER_CA}\" > /etc/ssh/user_ca.pub'"
-      ssh root@$${NODE}.lan "pct exec $${VMID} -- chmod 644 /etc/ssh/user_ca.pub"
-      ssh root@$${NODE}.lan "pct exec $${VMID} -- mkdir -p /etc/ssh/sshd_config.d"
+      ssh root@$${NODE} "pct exec $${VMID} -- bash -c 'echo \"$${USER_CA}\" > /etc/ssh/user_ca.pub'"
+      ssh root@$${NODE} "pct exec $${VMID} -- chmod 644 /etc/ssh/user_ca.pub"
+      ssh root@$${NODE} "pct exec $${VMID} -- mkdir -p /etc/ssh/sshd_config.d"
 
-      ssh root@$${NODE}.lan "pct exec $${VMID} -- bash -c 'cat > /etc/ssh/sshd_config.d/99-ssh-ca.conf << EOF
+      ssh root@$${NODE} "pct exec $${VMID} -- bash -c 'cat > /etc/ssh/sshd_config.d/99-ssh-ca.conf << EOF
 # SSH Certificate Authentication - managed by Terraform
 TrustedUserCAKeys /etc/ssh/user_ca.pub
 HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub
 EOF'"
 
-      ssh root@$${NODE}.lan "pct exec $${VMID} -- cat /etc/ssh/sshd_config.d/99-ssh-ca.conf"
-      ssh root@$${NODE}.lan "pct exec $${VMID} -- systemctl reload ssh 2>/dev/null || pct exec $${VMID} -- systemctl reload sshd 2>/dev/null"
+      ssh root@$${NODE} "pct exec $${VMID} -- cat /etc/ssh/sshd_config.d/99-ssh-ca.conf"
+      ssh root@$${NODE} "pct exec $${VMID} -- systemctl reload ssh 2>/dev/null || pct exec $${VMID} -- systemctl reload sshd 2>/dev/null"
 
       echo "=== SSH CA configured for $${HOSTNAME} ==="
     EOT
@@ -194,15 +194,15 @@ resource "null_resource" "verify_ssh" {
     command = <<-EOT
       set -e
 
-      NODE="${each.value.node}"
+      NODE="${each.value.node}.home.arpa"
       VMID="${each.value.vmid}"
       HOSTNAME="${each.key}"
 
       echo "=== Verifying SSH CA config for $${HOSTNAME} (LXC $${VMID} on $${NODE}) ==="
 
-      ssh -o BatchMode=yes "root@$${NODE}.lan" "pct exec $${VMID} -- test -f /etc/ssh/user_ca.pub"
-      ssh -o BatchMode=yes "root@$${NODE}.lan" "pct exec $${VMID} -- test -f /etc/ssh/ssh_host_ed25519_key-cert.pub"
-      ssh -o BatchMode=yes "root@$${NODE}.lan" "pct exec $${VMID} -- sshd -T" 2>/dev/null | grep -q "trustedusercakeys /etc/ssh/user_ca.pub"
+      ssh -o BatchMode=yes "root@$${NODE}" "pct exec $${VMID} -- test -f /etc/ssh/user_ca.pub"
+      ssh -o BatchMode=yes "root@$${NODE}" "pct exec $${VMID} -- test -f /etc/ssh/ssh_host_ed25519_key-cert.pub"
+      ssh -o BatchMode=yes "root@$${NODE}" "pct exec $${VMID} -- sshd -T" 2>/dev/null | grep -q "trustedusercakeys /etc/ssh/user_ca.pub"
 
       echo "=== SSH CA verification passed for $${HOSTNAME} ==="
     EOT
@@ -214,32 +214,27 @@ resource "null_resource" "verify_ssh" {
 # ============================================================================
 # Proxmox HA Management
 # ============================================================================
+# Registers each LXC with the Proxmox HA stack via the bpg provider's native
+# API resource — no SSH required. The provider talks to the Proxmox API using
+# var.proxmox_endpoint + var.proxmox_api_token_secret already configured.
 
-resource "null_resource" "ha_add" {
+resource "proxmox_haresource" "musa" {
   for_each = var.ha_enabled ? var.instances : {}
 
-  triggers = {
-    container_id = proxmox_virtual_environment_container.musa[each.key].id
-    node         = each.value.node
-    vmid         = each.value.vmid
-  }
+  resource_id = "ct:${each.value.vmid}"
+  type        = "ct"
+  state       = "started"
+  comment     = "Managed by Terraform (musa)"
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Adding ct:${each.value.vmid} to Proxmox HA ==="
-      ssh root@${each.value.node}.lan "ha-manager add ct:${each.value.vmid} --state started 2>/dev/null || true"
-    EOT
-  }
+  depends_on = [proxmox_virtual_environment_container.musa]
 
-  provisioner "local-exec" {
-    when    = destroy
-    command = <<-EOT
-      ssh root@${self.triggers.node}.lan "ha-manager remove ct:${self.triggers.vmid} 2>/dev/null || true"
-    EOT
+  # If the container is replaced (e.g. VMID or node changes), force-replace
+  # the HA resource too. This makes terraform destroy the HA registration
+  # BEFORE destroying the container — Proxmox refuses to delete an
+  # HA-managed container without the purge flag.
+  lifecycle {
+    replace_triggered_by = [proxmox_virtual_environment_container.musa[each.key]]
   }
-
-  depends_on = [proxmox_virtual_environment_container.musa, null_resource.verify_ssh]
 }
 
 # ============================================================================
@@ -249,7 +244,7 @@ resource "null_resource" "ha_add" {
 locals {
   inventory_hosts = {
     for name, inst in var.instances : name => {
-      ansible_host = "${name}.lan"
+      ansible_host = "${name}.mgmt.home.arpa"
       mgmt_ip      = inst.mgmt_ip
       transfer_ip  = inst.transfer_ip
       node_role    = inst.node_role

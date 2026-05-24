@@ -86,7 +86,8 @@ Internet -> Cloudflare Edge -> Tunnel
 
 | Hostname | VMID | Initial Node | Mgmt IP | Transfer IP | Role | Environment |
 | -------- | ---- | ------------ | ------- | ----------- | ---- | ----------- |
-| test.app.musa | 1190 | joseph | 192.168.5.190 | 192.168.11.190 | app | test |
+| test.app.musa | 1095 | joseph | 192.168.5.95 | 192.168.11.95 | app | test |
+| prod.app.musa | 1090 | joseph | 192.168.5.90 | 192.168.11.90 | app | prod (reserved, not yet deployed) |
 
 Single LXC, registered with Proxmox HA. If the initial node fails, Proxmox
 restarts the LXC on another cluster node (everette, maxwell, …) automatically.
@@ -102,7 +103,7 @@ Disk lives on Ceph so failover does not copy data; IP and hostname are preserved
 | Cores | 4 | Twenty CRM needs more than default |
 | Memory | 4096 MB | Higher than typical LXC |
 | Disk | 20G | Database + backups |
-| Storage | Ceph | Via base-infra module |
+| Storage | Ceph | From `infra.yaml` (`storage.ceph.name`) |
 | Nesting | true | Required for Docker-in-LXC |
 
 ## Directory Structure
@@ -111,6 +112,7 @@ Disk lives on Ceph so failover does not copy data; IP and hostname are preserved
 jacaranda-musa/
 ├── CLAUDE.md                          # This file
 ├── .gitignore                         # Excludes logs, terraform state
+├── infra.yaml                         # Topology source of truth (VLANs, storage, Proxmox)
 ├── justfile                           # Module-based recipes (mod test, mod prod)
 ├── test.just                          # Test environment recipes
 ├── prod.just                          # Production placeholder
@@ -123,16 +125,16 @@ jacaranda-musa/
 ├── lib/                               # submodule @ v1.5.0 (jacaranda-shared-libs)
 │   └── infrastructure/
 │       ├── just/                      # Shared justfile utilities
-│       └── terraform/modules/         # Shared terraform modules (LXC, base-infra, etc.)
+│       └── terraform/modules/         # Shared terraform modules (LXC, vmid-ranges)
 ├── terraform/
 │   ├── main.tf                        # LXC module (uses lib/infrastructure/terraform/modules/lxc)
 │   ├── variables.tf                   # Instance, infrastructure vars
 │   ├── outputs.tf                     # DNS entries, instance details
 │   └── envs/
 │       ├── test/
-│       │   └── main.tf                # Single instance: VMID 1190, joseph (HA-managed)
+│       │   └── main.tf                # Single instance: VMID 1095, joseph (HA-managed)
 │       └── prod/
-│           └── main.tf                # Placeholder with base-infra module
+│           └── main.tf                # Placeholder (provider config only)
 └── ansible/
     ├── ansible.cfg                    # Pipelining, YAML output, SSH multiplexing
     ├── inventory/
@@ -156,8 +158,8 @@ jacaranda-musa/
 
 **Terraform creates:**
 
-- 1x LXC container on Proxmox (joseph initial placement, VMID 1190)
-- Dual NIC: eth0 (mgmt .5.190) + eth1 (transfer .11.190)
+- 1x LXC container on Proxmox (joseph initial placement, VMID 1095)
+- Dual NIC: eth0 (mgmt .5.95) + eth1 (transfer .11.95)
 - Docker nesting enabled (`nesting=true`)
 - Proxmox HA registration via `ha-manager add` (failover to any cluster node)
 - Ansible inventory written to `ansible/inventory/test.yaml`
@@ -188,6 +190,9 @@ jacaranda-musa/
 | `cloudflare` | `zone_id` | Cloudflare zone ID for joeseymour.io |
 | `cloudflare` | `account_id` | Cloudflare account ID |
 | `github` | `pat` | GHCR read:packages token for private images |
+| `Jacaranda Proxmox Deploy` | `api token` | Proxmox API token secret (`TF_VAR_proxmox_api_token_secret`); shared with foundation |
+| `musa-project-test` | `public key` | SSH public key injected into LXC cloud-init (`TF_VAR_ssh_public_key`) |
+| `opentofu` | `password` | OpenTofu state encryption passphrase |
 
 **Secrets flow:**
 
@@ -198,14 +203,14 @@ justfile (op-read script) → ansible -e "var=val" → Jinja2 templates → .env
 **Check secrets before deployment:**
 
 ```bash
-just check-secrets  # Verifies all 7 items exist in 1Password
+just check-secrets  # Verifies all required 1Password items exist
 ```
 
 ## Deployment Workflow
 
 ### Prerequisites
 
-1. **1Password items exist:** `just check-secrets` (all 7 green)
+1. **1Password items exist:** `just check-secrets` (all green)
 2. **Cloudflare Tunnel created:** Dashboard → Zero Trust → Tunnels → `musa-project-test`
    - Public hostname: `musa-project-test.joeseymour.io` → `http://localhost:80`
    - Token stored in `op://Homelab/musa-project-crm-test/cf_tunnel_token`
@@ -252,17 +257,17 @@ just test::validate
 just test::logs
 
 # SSH to node
-ssh root@test.app.musa.lan "docker ps"
-ssh root@test.app.musa.lan "docker logs server --tail=20"
-ssh root@test.app.musa.lan "docker logs twenty-swag --tail=20"
+ssh root@test.app.musa.mgmt.home.arpa "docker ps"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs server --tail=20"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag --tail=20"
 ```
 
 ### Restart Services
 
 ```bash
-ssh root@test.app.musa.lan "cd /opt/musa && docker compose restart"
-ssh root@test.app.musa.lan "docker restart server"
-ssh root@test.app.musa.lan "docker restart twenty-swag"
+ssh root@test.app.musa.mgmt.home.arpa "cd /opt/musa && docker compose restart"
+ssh root@test.app.musa.mgmt.home.arpa "docker restart server"
+ssh root@test.app.musa.mgmt.home.arpa "docker restart twenty-swag"
 ```
 
 ### Test External Access
@@ -272,15 +277,15 @@ ssh root@test.app.musa.lan "docker restart twenty-swag"
 curl -I https://musa-project-test.joeseymour.io
 
 # Local (from LXC)
-ssh root@test.app.musa.lan "curl -I http://localhost:80"
-ssh root@test.app.musa.lan "curl -s http://localhost:3000/healthz"
+ssh root@test.app.musa.mgmt.home.arpa "curl -I http://localhost:80"
+ssh root@test.app.musa.mgmt.home.arpa "curl -s http://localhost:3000/healthz"
 ```
 
 ### View Backups
 
 ```bash
-ssh root@test.app.musa.lan "ls -lh /opt/musa/backups/"
-ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
+ssh root@test.app.musa.mgmt.home.arpa "ls -lh /opt/musa/backups/"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-backup --tail=20"
 ```
 
 ## DO vs DON'T
@@ -288,7 +293,7 @@ ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 ### DO
 
 - Use `just check-secrets` before first deployment
-- Use `root@test.app.musa.lan` for SSH (LXC containers use root)
+- Use `root@test.app.musa.mgmt.home.arpa` for SSH (LXC containers use root)
 - Let Ansible manage all config files on the LXC
 - Run `just test::deploy` to update (idempotent)
 - Use `just upgrade` to update OpenTofu providers
@@ -300,7 +305,7 @@ ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 - Modify the LXC container in Proxmox UI (Terraform-managed)
 - Edit `ansible/inventory/*.yaml` files manually (auto-generated by Terraform)
 - Edit files directly on the LXC (they'll be overwritten by next deploy)
-- Hardcode IP addresses or infrastructure values (use base-infra module)
+- Hardcode IP allocations or VLAN topology in `*.tf` files (use `infra.yaml` for VLAN/storage/Proxmox topology and the jacaranda-inventory registry for IP allocations)
 - Modify shared-libs content (propose changes to jacaranda-shared-libs repo)
 
 ## Agent Boundaries
@@ -321,13 +326,12 @@ ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 
 **What this agent CANNOT do (negative boundaries):**
 
-- Modify other service repositories (jacaranda-infra, jacaranda-redis, jacaranda-pihole, etc.)
-- Change base infrastructure (VLANs, DNS servers, Proxmox config) — use base-infra module outputs
+- Modify other service repositories (jacaranda-foundation, jacaranda-redis, jacaranda-pihole, etc.)
+- Change base infrastructure (VLANs, DNS servers, Proxmox config) at the source — edit musa's `infra.yaml` to mirror foundation when topology changes, or coordinate updates to `jacaranda-foundation/infra.yaml` upstream
 - Allocate IPs or VMIDs — must reference NetBox or coordinate with user
 - Create DNS records directly — outputs dns_entries/cname_entries, hub aggregates
 - Modify shared-libs (jacaranda-shared-libs) — propose changes to that repo instead
-- Hardcode infrastructure values — always consume via base-infra module
-- Bypass shared modules — always consume LXC module via lib/ submodule
+- Bypass shared modules — always consume LXC + vmid-ranges modules via lib/ submodule
 - Run `just apply` or `just deploy` without explicit user request
 - Create GitHub releases or version tags without user approval
 
@@ -336,7 +340,7 @@ ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 - **VMID allocation:** Use NetBox IPAM skill or ask user for next available VMID
 - **IP allocation:** Use NetBox IPAM skill or ask user for IP assignment
 - **DNS records:** Export dns_entries/cname_entries outputs, hub aggregation handles Pi-hole registration
-- **Base infrastructure access:** Always use base-infra module (proxmox_api_url, vlans, ssh_public_key, etc.)
+- **Base infrastructure access:** Read `infra.yaml` at the repo root (VLANs, storage, Proxmox token id, LXC template). Secrets (Proxmox token secret, SSH key) come from 1Password via TF_VAR injection in test.just.
 - **Terraform modules:** Always source from lib/ submodule at tagged version (currently v1.5.0)
 
 **If a skill is missing:** Ask user for guidance rather than creating manual workarounds.
@@ -348,10 +352,9 @@ ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 | Module | Source | Purpose |
 | ------ | ------ | ------- |
 | lxc | `lib/infrastructure/terraform/modules/lxc` | LXC container creation, SSH cert signing, inventory generation |
-| base-infra | `lib/infrastructure/terraform/modules/base-infra` | Base infrastructure outputs (Proxmox API, VLANs, SSH keys, DNS, storage) |
 | vmid-ranges | `lib/infrastructure/terraform/modules/vmid-ranges` | VMID allocation validation |
 
-**Never use terraform_remote_state** — always consume base-infra module for infrastructure values.
+**Infrastructure topology lives in `infra.yaml`** at the repo root — VLANs, storage, LXC template, Proxmox token id, TLS setting. This mirrors `jacaranda-foundation/infra.yaml` for the same homelab. Secrets (Proxmox API token secret, SSH key) come from 1Password and are injected via TF_VAR in test.just. The deprecated `base-infra` module (which read `data "terraform_remote_state"` from the no-longer-existing jacaranda-infra repo) is not used.
 
 **Module versioning:** lib/ submodule pinned to v1.5.0. Update via `git submodule update --remote lib` and commit new submodule reference.
 
@@ -361,9 +364,10 @@ ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 | ---------- | ------- | -------- |
 | 1Password Connect | Secret injection at deploy time | Hub managed |
 | Cloudflare Tunnel | External access at musa-project-test.joeseymour.io | User configured |
-| Pi-hole DNS | .lan hostname resolution | Hub managed (aggregates dns_entries/cname_entries) |
+| Pi-hole DNS | `.mgmt.home.arpa` hostname resolution | Hub managed (aggregates dns_entries/cname_entries) |
 | GHCR | Private container images (backup, rollup, webhook) | User authenticated |
-| Base infrastructure | Proxmox API, VLANs, SSH keys, DNS, storage | Hub terraform (via base-infra module) |
+| Base infrastructure | Proxmox API, VLANs, storage, LXC template | `infra.yaml` (repo root) + 1Password for secrets |
+| DNS server | Bootstrap resolver IP for the LXC | `jacaranda-inventory/data/services/dns.yaml` read at plan-time |
 | Shared libraries | Terraform modules, justfile utilities | lib/ submodule (jacaranda-shared-libs v1.5.0) |
 
 ## Related Documentation
@@ -384,13 +388,13 @@ ssh root@test.app.musa.lan "docker logs twenty-backup --tail=20"
 
 ```bash
 just check-secrets  # Verify cf_api_token exists
-ssh root@test.app.musa.lan "docker logs twenty-swag --tail=50"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag --tail=50"
 ```
 
 **Check DNS challenge:**
 
 ```bash
-ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i cloudflare"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag | grep -i cloudflare"
 ```
 
 ### Twenty CRM not accessible
@@ -398,21 +402,21 @@ ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i cloudflare"
 **Check container status:**
 
 ```bash
-ssh root@test.app.musa.lan "docker ps"  # All 9 containers should be Up
-ssh root@test.app.musa.lan "docker logs server --tail=50"
+ssh root@test.app.musa.mgmt.home.arpa "docker ps"  # All 9 containers should be Up
+ssh root@test.app.musa.mgmt.home.arpa "docker logs server --tail=50"
 ```
 
 **Check health endpoint:**
 
 ```bash
-ssh root@test.app.musa.lan "curl -s http://localhost:3000/healthz"
+ssh root@test.app.musa.mgmt.home.arpa "curl -s http://localhost:3000/healthz"
 ```
 
 **Check nginx proxy:**
 
 ```bash
-ssh root@test.app.musa.lan "cat /config/nginx/proxy-confs/twenty.conf"
-ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i twenty"
+ssh root@test.app.musa.mgmt.home.arpa "cat /config/nginx/proxy-confs/twenty.conf"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag | grep -i twenty"
 ```
 
 ### Cloudflare Tunnel not connecting
@@ -421,8 +425,8 @@ ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i twenty"
 
 ```bash
 just check-secrets  # Verify cf_tunnel_token exists
-ssh root@test.app.musa.lan "docker exec twenty-swag ps aux | grep cloudflared"
-ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i tunnel"
+ssh root@test.app.musa.mgmt.home.arpa "docker exec twenty-swag ps aux | grep cloudflared"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag | grep -i tunnel"
 ```
 
 **Verify tunnel configuration in Cloudflare Dashboard:**
@@ -436,15 +440,15 @@ ssh root@test.app.musa.lan "docker logs twenty-swag | grep -i tunnel"
 **Check PostgreSQL container:**
 
 ```bash
-ssh root@test.app.musa.lan "docker logs db --tail=50"
-ssh root@test.app.musa.lan "docker exec db pg_isready -U twenty"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs db --tail=50"
+ssh root@test.app.musa.mgmt.home.arpa "docker exec db pg_isready -U twenty"
 ```
 
 **Check Twenty CRM database connection:**
 
 ```bash
-ssh root@test.app.musa.lan "docker logs server | grep -i database"
-ssh root@test.app.musa.lan "cat /opt/musa/.env | grep PG_"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs server | grep -i database"
+ssh root@test.app.musa.mgmt.home.arpa "cat /opt/musa/.env | grep PG_"
 ```
 
 ### Backups not running
@@ -452,12 +456,12 @@ ssh root@test.app.musa.lan "cat /opt/musa/.env | grep PG_"
 **Check backup container:**
 
 ```bash
-ssh root@test.app.musa.lan "docker logs twenty-backup --tail=50"
-ssh root@test.app.musa.lan "ls -lh /opt/musa/backups/"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-backup --tail=50"
+ssh root@test.app.musa.mgmt.home.arpa "ls -lh /opt/musa/backups/"
 ```
 
 **Manual backup:**
 
 ```bash
-ssh root@test.app.musa.lan "docker exec twenty-backup /backup.sh"
+ssh root@test.app.musa.mgmt.home.arpa "docker exec twenty-backup /backup.sh"
 ```

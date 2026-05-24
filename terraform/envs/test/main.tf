@@ -5,11 +5,11 @@
 # automatically failover to another cluster node (everette, maxwell) if its
 # current host goes down. Disk on Ceph so the LXC migrates without data copy.
 #
-# VMID Allocation: 1190 (4-digit TSSS: 1xxx LXC + IP octet)
+# VMID Allocation: 1095 (4-digit TSSS: 1xxx LXC + IP octet)
 # Reference: .claude/skills/vmid-allocation.md
 #
 # IP Allocation:
-#   test.app.musa:   192.168.5.190 / 192.168.11.190 (VMID 1190, joseph initial)
+#   test.app.musa:   192.168.5.95 / 192.168.11.95 (VMID 1095, joseph initial)
 
 terraform {
   required_version = ">= 1.0"
@@ -23,16 +23,24 @@ terraform {
 }
 
 # ============================================================================
-# Base Infrastructure
+# Infrastructure topology
 # ============================================================================
-
-module "base_infra" {
-  source         = "../../../lib/infrastructure/terraform/modules/base-infra"
-  hub_state_path = "${path.module}/../../../../jacaranda-infra/infrastructure/terraform/terraform.tfstate"
-}
+# Self-contained: reads musa's own infra.yaml (Proxmox/network/storage) and the
+# jacaranda-inventory registry for DNS server allocations. No dependency on the
+# former jacaranda-infra hub state.
 
 locals {
-  base = module.base_infra
+  infra    = yamldecode(file("${path.module}/../../../infra.yaml"))
+  dns_yaml = yamldecode(file("${path.module}/../../../../jacaranda-inventory/data/services/dns.yaml"))
+
+  # Bootstrap resolver: prod primary Pi-hole on the mgmt VLAN. Hostname looked
+  # up in the registry; IP synthesised from infra.yaml's VLAN network + the
+  # registry's host octet so a registry move stays consistent.
+  dns_primary_alloc = one([
+    for alloc in local.dns_yaml.allocations :
+    alloc if alloc.vlan == "mgmt" && alloc.hostname == "prod.primary.standard.dns"
+  ])
+  dns_primary = "${local.infra.vlans["mgmt"].network}.${local.dns_primary_alloc.host}"
 }
 
 # ============================================================================
@@ -59,9 +67,9 @@ check "vmid_allocation" {
 # ============================================================================
 
 provider "proxmox" {
-  endpoint  = "https://192.168.5.5:8006/"
-  api_token = "${local.base.proxmox_api_token_id}=${local.base.proxmox_api_token_secret}"
-  insecure  = true
+  endpoint  = var.proxmox_endpoint
+  api_token = "${local.infra.proxmox.api_token_id}=${var.proxmox_api_token_secret}"
+  insecure  = local.infra.proxmox.tls_insecure
 
   ssh {
     agent    = true
@@ -78,10 +86,10 @@ locals {
 
   musa_instances = {
     "test.app.musa" = {
-      vmid        = 1190
+      vmid        = 1095
       node        = "joseph"
-      mgmt_ip     = "192.168.5.190"
-      transfer_ip = "192.168.11.190"
+      mgmt_ip     = "192.168.5.95"
+      transfer_ip = "192.168.11.95"
       node_role   = "app"
     }
   }
@@ -99,11 +107,11 @@ module "musa" {
 
   ansible_inventory_path = "${path.module}/../../../ansible/inventory/${local.env}.yaml"
 
-  vlans          = local.base.vlans
+  vlans          = local.infra.vlans
   ssh_public_key = var.ssh_public_key
-  dns_server     = local.base.dns_primary
-  ostemplate     = "${local.base.lxc_template_storage}:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
-  storage        = local.base.storage.ceph.name
+  dns_server     = local.dns_primary
+  ostemplate     = "${local.infra.lxc_template_storage}:vztmpl/${local.infra.lxc_template}"
+  storage        = local.infra.storage.ceph.name
 
   cores     = 4
   memory    = 4096

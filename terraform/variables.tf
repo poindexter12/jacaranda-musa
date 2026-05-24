@@ -104,7 +104,7 @@ variable "disk_size" {
 variable "step_ca_host" {
   description = "step-ca hostname for SSH cert signing"
   type        = string
-  default     = "step-ca.lan"
+  default     = "prod.vip.ca.mgmt.home.arpa"
 }
 
 # ============================================================================

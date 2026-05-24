@@ -21,16 +21,11 @@ terraform {
 }
 
 # ============================================================================
-# Base Infrastructure
+# Infrastructure topology
 # ============================================================================
 
-module "base_infra" {
-  source         = "../../../lib/infrastructure/terraform/modules/base-infra"
-  hub_state_path = "${path.module}/../../../../jacaranda-infra/infrastructure/terraform/terraform.tfstate"
-}
-
 locals {
-  base = module.base_infra
+  infra = yamldecode(file("${path.module}/../../../infra.yaml"))
 }
 
 # ============================================================================
@@ -38,9 +33,9 @@ locals {
 # ============================================================================
 
 provider "proxmox" {
-  endpoint  = local.base.proxmox_api_url
-  api_token = "${local.base.proxmox_api_token_id}=${local.base.proxmox_api_token_secret}"
-  insecure  = true
+  endpoint  = var.proxmox_endpoint
+  api_token = "${local.infra.proxmox.api_token_id}=${var.proxmox_api_token_secret}"
+  insecure  = local.infra.proxmox.tls_insecure
 
   ssh {
     agent    = true
