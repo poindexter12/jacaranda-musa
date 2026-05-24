@@ -186,6 +186,7 @@ jacaranda-musa/
 | `musa-project-crm-test` | `cf_tunnel_token` | Cloudflare Tunnel JWT for external access |
 | `musa-project-crm-test` | `pg_password` | PostgreSQL password (local container DB) |
 | `musa-project-crm-test` | `app_secret` | Twenty CRM application secret |
+| `musa-project-crm-test` | `encryption_key` | At-rest envelope key for OAuth tokens, TOTP secrets, app variables (Twenty v2.5+; raw secret, generate via `openssl rand -base64 32`) |
 | `cloudflare` | `api_token` | Cloudflare API for DNS validation (Let's Encrypt) |
 | `cloudflare` | `zone_id` | Cloudflare zone ID for joeseymour.io |
 | `cloudflare` | `account_id` | Cloudflare account ID |

@@ -108,6 +108,7 @@ deploy:
         -e "cf_account_id=$(secret-read 'op://Homelab/cloudflare/account_id')" \
         -e "pg_password=$(secret-read 'op://Homelab/musa-project-crm-test/pg_password')" \
         -e "app_secret=$(secret-read 'op://Homelab/musa-project-crm-test/app_secret')" \
+        -e "encryption_key=$(secret-read 'op://Homelab/musa-project-crm-test/encryption_key')" \
         -e "ghcr_pat=$(secret-read 'op://Homelab/github/pat')"
     printf '%b Done (test)%b\n' '{{ GREEN }}' '{{ NC }}'
 
