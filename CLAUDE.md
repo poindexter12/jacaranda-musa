@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quick Reference
 
-**Purpose:** Twenty CRM at musa-project-test.joeseymour.io with SWAG + Cloudflare Tunnel on a single LXC
+**Purpose:** Twenty CRM at musa-project-crm-test.joeseymour.io behind Caddy + Cloudflare Tunnel on a single LXC
 **Repository:** https://github.com/poindexter12/jacaranda-musa
 **Shared Libraries:** `lib/` submodule (jacaranda-shared-libs v1.5.0)
 **Secrets:** 1Password `op://Homelab/musa-project-crm-test/*` + shared Cloudflare/GitHub items
@@ -44,13 +44,13 @@ Musa runs as a single LXC container with Docker nesting enabled (`nesting=true` 
 Internet -> Cloudflare Edge -> Tunnel
                                  |
                                  v
-                           cloudflared (inside SWAG container)
+                           twenty-cloudflared (own container)
                                  |
                                  v
-                           SWAG :80 (nginx)
+                           twenty-caddy :80 (HTTP-only)
                                  |
                                  v
-                           twenty.conf → server:3000
+                           Caddyfile → server:3000
                                  |
                                  v
                            Twenty CRM server
@@ -64,7 +64,8 @@ Internet -> Cloudflare Edge -> Tunnel
 
 | Container | Purpose | Port |
 | --------- | ------- | ---- |
-| twenty-swag | SWAG (nginx + Let's Encrypt) + cloudflared | 80, 443 |
+| twenty-caddy | Caddy reverse proxy (HTTP-only, no certificates) | 80 |
+| twenty-cloudflared | Cloudflare Tunnel (only path in) | — |
 | server | Twenty CRM main application | 3000 |
 | worker | Background job processing | — |
 | db | PostgreSQL database | 5432 |
@@ -76,11 +77,24 @@ Internet -> Cloudflare Edge -> Tunnel
 
 **Key Features:**
 
-- **SWAG:** Nginx reverse proxy with automatic Let's Encrypt SSL (DNS challenge via Cloudflare)
-- **Cloudflare Tunnel:** Embedded cloudflared in SWAG container for external access without port forwarding
+- **Caddy:** The only reverse proxy — deliberately HTTP-only, since cloudflared is the sole path in and TLS terminates at Cloudflare's edge. No certificates anywhere in the stack.
+- **Cloudflare Tunnel:** Standalone cloudflared container (credential file lives on the host at /opt/musa/cloudflared/credentials.json — verified by Ansible, never templated)
 - **Twenty CRM:** Modern open-source CRM (https://github.com/twentyhq/twenty)
 - **Backups:** Automated PostgreSQL backups via custom container
 - **Webhooks:** Dedicated receiver and worker for external integrations
+
+## Ingress Migration (2026-08-18: SWAG → Caddy + cloudflared)
+
+SWAG was retired because its cloudflared DOCKER_MOD coupled the tunnel to
+certbot: every restart ran a Let's Encrypt renewal for a certificate nothing
+used (TLS terminates at Cloudflare's edge), delaying tunnel recovery. The
+replacement is two small containers: `twenty-caddy` (HTTP-only reverse proxy,
+`caddy/Caddyfile`) and `twenty-cloudflared` (`cloudflared/config.yml` +
+`credentials.json`). Hostname changes are made in group_vars
+(`twenty_domain`/`twenty_domain_aliases`) and flow into both templates; the
+tunnel credential is created once with `cloudflared tunnel create` and only
+verified by the role. SWAG-era secrets (cf_tunnel_password, cf_api_token,
+cf_zone_id, cf_account_id) are retired.
 
 ## Node Allocation
 
@@ -149,7 +163,7 @@ jacaranda-musa/
         ├── handlers/main.yaml         # Stack restart handler
         └── templates/
             ├── cloudflare.ini.j2      # Cloudflare API token for certbot DNS-01 validation
-            ├── docker-compose.yaml.j2 # 9-service stack (SWAG, Twenty, PG, Redis, etc.)
+            ├── docker-compose.yaml.j2 # 10-service stack (Twenty, PG, Redis, sidecars, Caddy, cloudflared)
             ├── env.j2                 # .env for Twenty's env_file directive
             └── twenty.conf.j2         # nginx proxy config → server:3000
 ```
@@ -169,13 +183,13 @@ jacaranda-musa/
 
 - Docker + Docker Compose plugin installation
 - GHCR authentication (for private backup/rollup/webhook images)
-- Docker Compose stack: SWAG + Twenty CRM + PostgreSQL + Redis + backup + rollup + webhooks
+- Docker Compose stack: Caddy + cloudflared + Twenty CRM + PostgreSQL + Redis + backup + rollup + webhooks
 - 4 configuration templates:
   - `cloudflare.ini.j2` — Cloudflare API token for certbot DNS-01 validation
   - `docker-compose.yaml.j2` — Full 9-container stack
   - `env.j2` — Twenty CRM environment variables
   - `twenty.conf.j2` — Nginx reverse proxy config
-- Health verification: SWAG port 80 + Twenty /healthz with retries
+- Health verification: Twenty /healthz locally, then https://<domain>/healthz through the tunnel
 
 ## Secrets
 
@@ -260,7 +274,8 @@ just test::logs
 # SSH to node
 ssh root@test.app.musa.mgmt.home.arpa "docker ps"
 ssh root@test.app.musa.mgmt.home.arpa "docker logs server --tail=20"
-ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag --tail=20"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-caddy --tail=20"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-cloudflared --tail=20"
 ```
 
 ### Restart Services
@@ -268,7 +283,7 @@ ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag --tail=20"
 ```bash
 ssh root@test.app.musa.mgmt.home.arpa "cd /opt/musa && docker compose restart"
 ssh root@test.app.musa.mgmt.home.arpa "docker restart server"
-ssh root@test.app.musa.mgmt.home.arpa "docker restart twenty-swag"
+ssh root@test.app.musa.mgmt.home.arpa "docker restart twenty-caddy twenty-cloudflared"
 ```
 
 ### Test External Access
@@ -315,9 +330,9 @@ ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-backup --tail=20"
 
 - Modify files within jacaranda-musa repository only
 - Configure Musa LXC via terraform and ansible
-- Update Twenty CRM version, SWAG configuration, docker-compose stack
+- Update Twenty CRM version, Caddy/cloudflared configuration, docker-compose stack
 - Add/remove container services (backup, rollup, webhook workers)
-- Update Cloudflare Tunnel configuration, nginx proxy settings
+- Update Cloudflare Tunnel ingress and Caddy proxy settings
 - Run deployments via `just test::deploy` (user manually triggers)
 - Add validation checks and troubleshooting recipes
 - Update CLAUDE.md documentation for musa service
@@ -377,25 +392,19 @@ ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-backup --tail=20"
 | ----- | -------- |
 | Shared libraries repo | https://github.com/poindexter12/jacaranda-shared-libs |
 | Twenty CRM upstream | https://github.com/twentyhq/twenty |
-| SWAG (LinuxServer.io) | https://docs.linuxserver.io/images/docker-swag |
+| Caddy | https://caddyserver.com/docs/ |
 | Cloudflare Tunnel | https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/ |
 | Docker-in-LXC | https://pve.proxmox.com/wiki/Linux_Container#_nesting |
 
 ## Troubleshooting
 
-### SWAG fails to start
-
-**Check Cloudflare API token:**
+### Caddy or cloudflared fails to start
 
 ```bash
-just check-secrets  # Verify cf_api_token exists
-ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag --tail=50"
-```
-
-**Check DNS challenge:**
-
-```bash
-ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag | grep -i cloudflare"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-caddy --tail=50"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-cloudflared --tail=50"
+ssh root@test.app.musa.mgmt.home.arpa "cat /opt/musa/caddy/Caddyfile"
+ssh root@test.app.musa.mgmt.home.arpa "cat /opt/musa/cloudflared/config.yml"
 ```
 
 ### Twenty CRM not accessible
@@ -403,7 +412,7 @@ ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag | grep -i cloudfl
 **Check container status:**
 
 ```bash
-ssh root@test.app.musa.mgmt.home.arpa "docker ps"  # All 9 containers should be Up
+ssh root@test.app.musa.mgmt.home.arpa "docker ps"  # All 10 containers should be Up
 ssh root@test.app.musa.mgmt.home.arpa "docker logs server --tail=50"
 ```
 
@@ -413,21 +422,19 @@ ssh root@test.app.musa.mgmt.home.arpa "docker logs server --tail=50"
 ssh root@test.app.musa.mgmt.home.arpa "curl -s http://localhost:3000/healthz"
 ```
 
-**Check nginx proxy:**
+**Check the Caddy proxy:**
 
 ```bash
-ssh root@test.app.musa.mgmt.home.arpa "cat /config/nginx/proxy-confs/twenty.conf"
-ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag | grep -i twenty"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-caddy --tail=30"
 ```
 
 ### Cloudflare Tunnel not connecting
 
-**Check tunnel token:**
+**Check the tunnel:**
 
 ```bash
-just check-secrets  # Verify cf_tunnel_token exists
-ssh root@test.app.musa.mgmt.home.arpa "docker exec twenty-swag ps aux | grep cloudflared"
-ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-swag | grep -i tunnel"
+ssh root@test.app.musa.mgmt.home.arpa "docker logs twenty-cloudflared --tail=30"
+ssh root@test.app.musa.mgmt.home.arpa "ls -la /opt/musa/cloudflared/"  # config.yml + credentials.json
 ```
 
 **Verify tunnel configuration in Cloudflare Dashboard:**

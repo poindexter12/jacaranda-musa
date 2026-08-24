@@ -61,7 +61,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 60s
+      # Twenty 2.31 needs ~135s to finish booting. At the old 60s grace the
+      # container was declared unhealthy at ~110s, so the restart handler's
+      # `up -d --force-recreate` aborted every service with
+      # `depends_on: service_healthy` and left the stack half-started.
+      # Failures during start_period do not count toward `retries`.
+      start_period: 180s
     logging: *default-logging
 
   worker:
@@ -100,6 +105,8 @@ services:
       RETENTION_DAYS: "7"
     logging: *default-logging
 
+  # TWENTY_API_KEY for rollup and the webhook services comes from .env
+  # (env_file) — see env.j2. Never inline it here.
   rollup:
     image: ghcr.io/poindexter12/musa-project-twenty-crm/rollup:{{ rollup_tag }}
     container_name: twenty-rollup
@@ -159,43 +166,34 @@ services:
       REDIS_URL: redis://redis:6379/0
     logging: *default-logging
 
-  swag:
-    image: lscr.io/linuxserver/swag:latest
-    container_name: twenty-swag
+  # The only reverse proxy. Reachable solely from inside the compose network —
+  # cloudflared is the only way in, so Caddy speaks plain HTTP on :80 and there
+  # is no certificate anywhere in this stack.
+  caddy:
+    image: caddy:2-alpine
+    container_name: twenty-caddy
     restart: unless-stopped
     depends_on:
       server:
         condition: service_healthy
-    cap_add:
-      - NET_ADMIN
-    environment:
-      PUID: "1000"
-      PGID: "1000"
-      TZ: {{ timezone }}
-      DOCKER_MODS: linuxserver/mods:universal-cloudflared
-      CF_TUNNEL_NAME: {{ cf_tunnel_name }}
-      CF_TUNNEL_PASSWORD: {{ cf_tunnel_password }}
-      CF_TUNNEL_CONFIG: |
-        ingress:
-          - hostname: {{ twenty_domain }}
-            service: http://localhost:80
-{% for alias in twenty_domain_aliases | default([]) %}
-          - hostname: {{ alias }}
-            service: http://localhost:80
-{% endfor %}
-          - service: http_status:404
-      URL: {{ swag_url }}
-      SUBDOMAINS: {{ swag_subdomain }}
-      ONLY_SUBDOMAINS: "true"
-      VALIDATION: dns
-      DNSPLUGIN: cloudflare
-      CF_API_TOKEN: {{ cf_api_token }}
-      CF_ZONE_ID: {{ cf_zone_id }}
-      CF_ACCOUNT_ID: {{ cf_account_id }}
     volumes:
-      - swag-config:/config
-      - {{ app_data_dir }}/nginx:/config/nginx/site-confs
-      - {{ app_data_dir }}/cloudflare.ini:/config/dns-conf/cloudflare.ini:ro
+      - {{ app_data_dir }}/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging: *default-logging
+
+  # The Cloudflare Tunnel. Previously a DOCKER_MOD inside SWAG, which meant
+  # every restart ran certbot for an unused certificate before the tunnel came
+  # back — see CLAUDE.md "Ingress Migration". Everything terminates at Caddy.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: twenty-cloudflared
+    restart: unless-stopped
+    depends_on:
+      - caddy
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - {{ app_data_dir }}/cloudflared:/etc/cloudflared:ro
     logging: *default-logging
 
 volumes:
@@ -205,5 +203,7 @@ volumes:
     driver: local
   backups:
     driver: local
-  swag-config:
+  caddy-data:
+    driver: local
+  caddy-config:
     driver: local

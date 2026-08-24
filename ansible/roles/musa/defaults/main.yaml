@@ -34,10 +34,14 @@ webhook_tag: "latest"
 #
 # Variable          | Source (1Password)                                  | Exposure
 # ------------------|-----------------------------------------------------|------------------
-# cf_tunnel_password| op://Homelab/musa-project-crm-test/cf_tunnel_password | Docker env var
-# cf_api_token      | op://Homelab/musa-project-crm-test/cf_api_token    | File (cloudflare.ini)
-# cf_zone_id        | op://Homelab/cloudflare/zone_id                    | Docker env var
-# cf_account_id     | op://Homelab/cloudflare/account_id                 | Docker env var
 # pg_password       | op://Homelab/musa-project-crm-test/pg_password     | Docker env var + .env file
 # app_secret        | op://Homelab/musa-project-crm-test/app_secret      | .env file only
+# encryption_key    | op://Homelab/musa-project-crm-test/encryption_key  | .env file only
+# twenty_api_key    | op://Homelab/musa-project-crm-test/twenty_api_key  | .env file only (rollup + webhook sidecars)
 # ghcr_pat          | op://Homelab/github/pat                            | Docker login (not persisted)
+#
+# The cloudflared tunnel credential (credentials.json) is NOT an extra-var:
+# it lives on the host, deployed once at tunnel creation, and the role only
+# verifies it exists. SWAG-era secrets (cf_tunnel_password, cf_api_token,
+# cf_zone_id, cf_account_id) were retired with the 2026-08-18 ingress
+# migration.

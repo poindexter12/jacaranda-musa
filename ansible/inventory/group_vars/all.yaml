@@ -9,16 +9,15 @@ timezone: America/Denver
 # Twenty CRM
 twenty_tag: "v2"
 twenty_domain: musa-project-crm-test.joeseymour.io
-# Additional hostnames that nginx will accept (experimental custom domain)
+# Additional hostnames Caddy and the tunnel accept (custom domain + legacy alias)
 twenty_domain_aliases:
   - crm-test.musa-project.org
+  - musa-project-crm-test-caddy.joeseymour.io
 
-# Cloudflare Tunnel (locally managed)
+# Cloudflare Tunnel (locally managed; credential file lives on the host,
+# see roles/musa/tasks — it is verified, never templated)
 cf_tunnel_name: musa-project-crm-test
-
-# SWAG
-swag_url: joeseymour.io
-swag_subdomain: musa-project-crm-test
+cf_tunnel_id: 24a3799b-6b1c-4d44-868d-1159e770fb71
 
 # Custom images
 backup_tag: "latest"

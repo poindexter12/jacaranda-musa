@@ -1,0 +1,42 @@
+# {{ ansible_managed }}
+## Twenty CRM reverse proxy — Caddy
+##
+## The only reverse proxy in this stack. Deliberately HTTP-only: the sole path
+## in is cloudflared over the compose network in plaintext, so there is no
+## certificate to obtain or renew anywhere here.
+##
+## All hostnames share one site block, so adding or removing one is an ingress
+## change in cloudflared-config.yml.j2 and needs no edit here.
+{
+	admin off
+	auto_https off
+}
+
+http://{{ twenty_domain }}{% for alias in twenty_domain_aliases | default([]) %}, http://{{ alias }}{% endfor %} {
+	encode zstd gzip
+
+	# Matches client_max_body_size 100M from the nginx config.
+	request_body {
+		max_size 100MB
+	}
+
+	reverse_proxy server:3000 {
+		# cloudflared reaches us over plain HTTP, so Caddy would derive
+		# X-Forwarded-Proto: http and Twenty would generate http:// URLs.
+		# The public scheme is always https.
+		header_up X-Forwarded-Proto https
+
+		# Websockets need no special handling in Caddy — it upgrades natively.
+
+		transport http {
+			dial_timeout 30s
+			read_timeout 300s
+			write_timeout 300s
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
