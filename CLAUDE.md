@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+> **ARCHIVED 2026-08-23.** This repo is read-only. The live stack is managed from
+> `jacaranda-homelab/hosted-apps/musa` (https://github.com/poindexter12/jacaranda-homelab).
+> Do not run `just test::deploy` / `prod::deploy` from here. See README.md.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 # Musa Project — Twenty CRM Service
