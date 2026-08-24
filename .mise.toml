@@ -16,8 +16,6 @@ pre-commit = "latest"
 [settings]
 # Automatically install missing tools when entering directory
 auto_install = true
-# Trust this config file
-trusted_config_paths = ["."]
 
 [hooks]
 # Create + sync the Python venv after `mise install`. uv sync is idempotent,
