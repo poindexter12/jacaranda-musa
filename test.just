@@ -86,6 +86,111 @@ rollback:
     printf '%b  Rollback complete — run just test::validate to check health%b\n' '{{ GREEN }}' '{{ NC }}'
 
 # ============================================================================
+# Backup & Restore
+# ============================================================================
+#
+# The backup sidecar writes nightly pg_dump custom-format archives (-Fc, gzip:5)
+# into the `musa_backups` docker volume, with 7-day retention. Dumps cover the
+# whole `twenty` database: core, metadata, and every workspace_* schema.
+#
+# Restore is the recovery path for a bad Twenty upgrade. Upgrade migrations are
+# one-way — there is no downgrade command — so the only way back is to put an
+# older dump under an older image, or to roll the LXC back to a Proxmox
+# snapshot. Prefer the snapshot when config or docker state also needs
+# rewinding; use `restore` when only Postgres does.
+#
+# Restoring also reproduces users, workspaces, and the upgrade cursor in
+# core.upgradeMigration, which is why it — not a scripted signup — is the way to
+# stand up a known-good instance from scratch.
+
+# List Postgres dumps on the LXC, newest first
+backups:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf '%b=== Musa backups (test) ===%b\n' '{{ BOLD }}' '{{ NC }}'
+    ssh -o BatchMode=yes root@{{ musa_host }} bash -s <<'REMOTE'
+    set -euo pipefail
+    dir=$(docker volume inspect musa_backups | sed -n 's/.*"Mountpoint": "\([^"]*\)".*/\1/p')
+    [ -n "$dir" ] || { echo "could not resolve the musa_backups volume"; exit 1; }
+    ls -lht "$dir" | tail -n +2
+    REMOTE
+
+# Take an on-demand Postgres dump — run this before any upgrade
+backup-now:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf '%b-> Taking on-demand Musa dump%b\n' '{{ CYAN }}' '{{ NC }}'
+    ssh -o BatchMode=yes root@{{ musa_host }} "docker exec twenty-backup /backup.sh"
+    printf '%b Dump complete%b\n' '{{ GREEN }}' '{{ NC }}'
+
+# Stops every service holding a Postgres connection, drops and recreates the
+# `twenty` database, restores the archive, flushes Redis so cached metadata
+# cannot outlive the data it describes, then brings the stack back up.
+#
+#   just test::restore                              # newest dump
+#   just test::restore twenty_20260816_010000.dump  # a specific one
+#
+# Restore Postgres from a dump (default: newest). DESTRUCTIVE — drops the database.
+[confirm("Restore the Musa test database from a dump? This DROPS the current database!")]
+restore file="latest":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf '%b=== Restoring Musa database (test) ===%b\n' '{{ BOLD }}' '{{ NC }}'
+    ssh -o BatchMode=yes root@{{ musa_host }} bash -s -- '{{ file }}' <<'REMOTE'
+    set -euo pipefail
+    DUMP="$1"
+
+    DIR=$(docker volume inspect musa_backups | sed -n 's/.*"Mountpoint": "\([^"]*\)".*/\1/p')
+    [ -n "$DIR" ] || { echo "could not resolve the musa_backups volume"; exit 1; }
+
+    if [ "$DUMP" = "latest" ]; then
+        DUMP=$(ls -t "$DIR"/*.dump 2>/dev/null | head -1 | xargs -r basename)
+    fi
+    [ -n "$DUMP" ]        || { echo "no dumps found in $DIR"; exit 1; }
+    [ -f "$DIR/$DUMP" ]   || { echo "no such dump: $DUMP"; exit 1; }
+
+    echo "-> Restoring from $DUMP ($(du -h "$DIR/$DUMP" | cut -f1))"
+
+    # Verify the archive before touching the live database, so a corrupt dump
+    # fails here rather than halfway through a drop/recreate.
+    docker run --rm -v musa_backups:/backups postgres:16 \
+        pg_restore --list "/backups/$DUMP" >/dev/null
+    echo "   archive integrity OK"
+
+    set -a; . /opt/musa/.env; set +a
+    : "${PG_DATABASE_PASSWORD:?PG_DATABASE_PASSWORD missing from /opt/musa/.env}"
+
+    cd /opt/musa
+
+    echo "-> Stopping database consumers"
+    docker compose stop server worker backup rollup webhook-receiver webhook-worker
+
+    echo "-> Dropping and recreating the database"
+    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+        -c "select pg_terminate_backend(pid) from pg_stat_activity
+            where datname = 'twenty' and pid <> pg_backend_pid();" >/dev/null
+    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+        -c 'drop database if exists twenty;'
+    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+        -c 'create database twenty;'
+
+    echo "-> Restoring dump"
+    docker run --rm --network musa_default -v musa_backups:/backups \
+        -e PGPASSWORD="$PG_DATABASE_PASSWORD" postgres:16 \
+        pg_restore -h db -U postgres -d twenty --no-owner --no-privileges \
+        "/backups/$DUMP"
+
+    # Redis carries Twenty's workspace metadata cache and job queues. Left
+    # alone it would describe the database we just replaced.
+    echo "-> Flushing Redis"
+    docker compose exec -T redis redis-cli FLUSHALL >/dev/null
+
+    echo "-> Starting services"
+    docker compose up -d
+    REMOTE
+    printf '%b Restore complete — run just test::validate to check health%b\n' '{{ GREEN }}' '{{ NC }}'
+
+# ============================================================================
 # Ansible Operations
 # ============================================================================
 
